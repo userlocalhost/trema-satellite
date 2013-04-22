@@ -1,0 +1,29 @@
+<html>
+	<head>
+		<script type="text/javascript">
+			window.onload = function() {
+				var list = Array();
+
+				list['foo'] = 10;
+				list['bar'] = 20;
+
+				console.debug("[main] list['foo'] : " + list['foo']);
+				console.debug("[main] list['hoge'] : " + list['hoge']);
+
+				if(list['foo'] != undefined) {
+					console.debug("[main] list['foo'] is true");
+				} else {
+					console.debug("[main] list['foo'] is false");
+				}
+
+				if(list['hoge'] != undefined) {
+					console.debug("[main] list['hoge'] is true");
+				} else {
+					console.debug("[main] list['hoge'] is false");
+				}
+			}
+		</script>
+	</head>
+	<body>
+	</body>
+</html>

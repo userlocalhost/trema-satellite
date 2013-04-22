@@ -1,0 +1,12 @@
+*.swp
+README
+Rakefile
+config
+db
+doc
+lib
+log
+script
+test
+tmp
+vendor

@@ -1,0 +1,126 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<script type="text/javascript" src="/js/prototype.js"></script>
+		<script type="text/javascript" src="/js/processing-1.4.1.js"></script>
+    <script type="text/javascript" src="/js/server.js"></script>
+    <script type="text/javascript" src="/js/route.js"></script>
+    <script type="text/javascript" src="/js/line.js"></script>
+    <script type="text/javascript" src="/js/switch.js"></script>
+    <script type="text/javascript" src="/js/host.js"></script>
+    <script type="text/javascript" src="/js/node.js"></script>
+    <script type="text/javascript" src="/js/graph.js"></script>
+		<link rel="stylesheet" type="text/css" href="/css/graph_top.css">
+		<script type="text/javascript">
+			Global = function() {
+				var width;
+				var height;
+
+				return {
+					set_width: function(w) {
+						this.width = w;
+					},
+					set_height: function(h) {
+						this.height = h;
+					},
+					width: this.width,
+					height: this.height,
+				};
+			}();
+
+			window.onload = function(){
+				Global.set_width(<%=@width%>);
+				Global.set_height(<%=@height%>);
+
+				Switch.setContentSwitchInfo($('swinfo'));
+				Switch.setTitleSwitchInfo($('swinfo_title'));
+
+				Route.setContentEntriesInfo($('route_entries'));
+
+				// set nodes
+				<% @switch_positions.each do |each| %>
+					Switch.create(<%= each['dpid'] %>, <%= each['x'] %>, <%= each['y'] %>);
+				<% end %>
+
+				// set lines
+				<% @ports.each do |each| %>
+					{
+						var node = Switch.get_from_dpid(<%= each.dpid %>);
+
+						if(node) {
+							node.set_node(<%= each.node_id %>, <%= each.portnum %>, <%= each.connection_to %>);
+						}
+					}
+
+					// detect node_id (not dpid)
+					Line.create(<%= each.node_id %>, <%= each.connection_to %>)
+				<% end %>
+
+				// set hosts
+				<% @hosts.each do |each| %>
+					Host.create(<%= each['node_id'] %>, <%= each['neighbor'] %>, "<%= each['dladdr'] %>", "<%= each['nwaddr'] %>");
+				<% end %>
+
+				<% @routes.each do |each| %>
+					Route.create(<%= each['route_id'] %>, <%= each['entries'] %>, <%= each['path'] %>);
+				<% end %>
+	
+				new Processing($('graph_main'), sketchProc);
+			}
+
+			function route_selection(item) {
+				var route_id = item.options[item.selectedIndex].value;
+
+				Route.select(route_id);
+			}
+		</script>
+	</head>
+	<body>
+		<div class="graph_main">
+			<canvas class='graph_root' id="graph_main" width=<%=@width%> height=<%=@height%>></canvas>
+			<div class="selection">
+				<div class="title">
+					経路の選択
+				</div>
+				<select id="route_selection" size=10>
+					<option value="-1">選択しない</option>
+					<% @routes.each_with_index do |each, i| %>
+						<option value="<%= each['route_id'] %>"> <%= (i + 1) %> 番経路</option>
+					<% end %>
+				</select><br/>
+				<input type="button" value="選択" onClick="route_selection($('route_selection'))" />
+			</div>
+		</div>
+
+		<div class="view_container">
+			<div class='views'>
+				<div class="inner_view">
+					トラフィック状況（全体）
+					<div class="context">
+						<pre></pre>
+					</div>
+				</div>
+				<div class="inner_view">
+					選択したスイッチの情報 <span id="swinfo_title"></span>
+					<div class="context">
+						<pre id="swinfo"></pre>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="view_container">
+			<div class='views'>
+				<div class="inner_view">
+					選択した経路のフローエントリ
+					<div class="context">
+						<pre id="route_entries"></pre>
+					</div>
+				</div>
+				<div class="inner_view">
+					選択した経路のトラフィック
+					<div class="context"></div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
