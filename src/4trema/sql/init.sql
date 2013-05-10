@@ -29,10 +29,6 @@ create table ports (
 	portnum smallint unsigned not null,
 	node_id int unsigned,
 	connection_to bigint unsigned,
-	rx_packets int unsigned,
-	tx_packets int unsigned,
-	rx_bytes int unsigned,
-	tx_bytes int unsigned,
 	primary key (dpid, portnum)
 );
 
@@ -69,14 +65,23 @@ create table actions (
 );
 
 create table flowstats (
+	stats_id int unsigned auto_increment not null,
 	entry_id int unsigned not null,
-	duration_sec int unsigned,
-	duration_nsec int unsigned,
-	priority smallint unsigned,
-	idle_timeout smallint unsigned,
-	hard_timeout smallint unsigned,
-	cookie bigint unsigned,
 	packet_count bigint unsigned,
 	byte_count bigint unsigned,
-	primary key (entry_id)
+	time timestamp default current_timestamp(),
+	primary key (stats_id)
+);
+
+create table portstats (
+	stats_id int unsigned auto_increment not null,
+	dpid bigint unsigned not null,
+	portnum smallint unsigned not null,
+	node_id int unsigned,
+	rx_packets int unsigned,
+	tx_packets int unsigned,
+	rx_bytes int unsigned,
+	tx_bytes int unsigned,
+	time timestamp default current_timestamp(),
+	primary key (stats_id)
 );

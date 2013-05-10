@@ -1,13 +1,8 @@
-require 'graph-route'
+require 'lib/graph-route'
 
 module Graph
 	# 経路を構成する各スイッチのフローエントリ
 	class Entry
-		DB_HOST = 'localhost'
-		DB_USER = 'root'
-		DB_PASS = 'airone'
-		DB_NAME = 'graph'
-
 		@@entries = []
 
 		attr_reader :dpid, :match, :actions, :stats
@@ -187,6 +182,13 @@ module Graph
       return isin
     end
 
+		def delete_db
+			entry_id = isin_db
+
+			do_delete_db_entry entry_id
+			do_delete_db_stat entry_id
+		end
+
     # This routine returns entry_id. If no stored entry is matched, this returns -1.
 		def isin_db
 			ret = -1
@@ -205,9 +207,9 @@ module Graph
 										match_tp_src,
 										match_tp_dst from entries where dpid = #{@dpid}"
 
-			client = get_db_accessor
+			client = Graph::DB.get_accessor
 			client.query(sql).each do 
-        |entry_id,\
+        | entry_id,\
 				match_in_port,\
 				match_dl_src,\
 				match_dl_dst,\
@@ -219,7 +221,7 @@ module Graph
 				match_nw_src,\
 				match_nw_dst,\
 				match_tp_src,\
-				match_tp_dst|
+				match_tp_dst |
 
         dl_src = Mac.new match_dl_src
         dl_dst = Mac.new match_dl_dst
@@ -245,12 +247,12 @@ module Graph
         end
 			end
 
+			client.close
+
 			return ret
 		end
 
     def store_db_entry entry_id = -1
-			client = get_db_accessor
-
 			sql = "insert into entries (
 				created_time, 
 				dpid,
@@ -295,58 +297,44 @@ module Graph
 					route_index = #{@route_index} where entry_id = #{entry_id}"
 			end
 
+			client = Graph::DB.get_accessor
+
 			stmt = client.prepare sql
 				
 			# execute query
 			stmt.execute
 
-      return stmt.insert_id
+			ret = stmt.insert_id
+
+			client.close
+
+      return ret
     end
 
-		def create_db_stats entry_id
-			store_db_stats "insert into flowstats (
-				entry_id,
-				duration_sec,
-				duration_nsec,
-				priority,
-				idle_timeout,
-				hard_timeout,
-				cookie,
-				packet_count,
-				byte_count
-			) value (
-				#{entry_id},
-				#{@stats.duration_sec},
-				#{@stats.duration_nsec},
-				#{@stats.priority},
-				#{@stats.idle_timeout},
-				#{@stats.hard_timeout},
-				#{@stats.cookie},
-				#{@stats.packet_count},
-				#{@stats.byte_count}
-			)"
-		end
-
-		def update_db_stats
+		def insert_db_stats
 			entry_id = isin_db
 			if entry_id < 0 then
 				print "[ERROR] fail to get entry(dpid:#{@dpid}, rid:#{@route_id}) from DB\n"
 				return
 			end
 
-			store_db_stats "update flowstats set
-				duration_sec = #{@stats.duration_sec},
-				duration_nsec = #{@stats.duration_nsec},
-				priority = #{@stats.priority},
-				idle_timeout = #{@stats.idle_timeout},
-				hard_timeout = #{@stats.hard_timeout},
-				cookie = #{@stats.cookie},
-				packet_count = #{@stats.packet_count},
-				byte_count = #{@stats.byte_count} where entry_id = #{entry_id}"
+			store_db_stats "insert into flowstats (
+				entry_id,
+				packet_count,
+				byte_count
+			) value (
+				#{entry_id},
+				#{@stats.packet_count},
+				#{@stats.byte_count}
+			)"
 		end
 
 		def store_db_stats sql
-			get_db_accessor.prepare( sql ).execute
+			client = Graph::DB.get_accessor
+
+			client.prepare( sql ).execute
+
+			client.close
 		end
 
     def do_store_db_action entry_id, action, index = 0
@@ -359,11 +347,13 @@ module Graph
 	        outport
 	      ) value (?, ?, ?, ?)'
 
-				client = get_db_accessor
+				client = Graph::DB.get_accessor
         stmt = client.prepare(sql).execute entry_id,
           index,
           OFPAT_OUTPUT,
           action.port_number
+
+				client.close
       end
     end
 
@@ -388,14 +378,7 @@ module Graph
 
         # Store new entries corresponding to @action
         store_db_action entry_id
-
-				# create flow-stats table-entry
-				create_db_stats entry_id
       end
-		end
-
-		def get_db_accessor
-			return Mysql.connect(DB_HOST, DB_USER, DB_PASS, DB_NAME)
 		end
 
 		def self.store_db
@@ -408,9 +391,11 @@ module Graph
 		# @return
 		#		Entry オブジェクト：引数にマッチする Entry オブジェクトがある場合
 		#		nil：引数にマッチする Entry オブジェクトが無い場合
-		def self.isin dpid, match, actions
+		def self.isin dpid, match, actions = nil
 			@@entries.find do |each|
-				(each.dpid == dpid) && (each.is_same_match? match) && (each.is_same_actions? actions)
+				( each.dpid == dpid ) && 
+				( each.is_same_match? match ) && 
+				( ( actions == nil ) || ( each.is_same_actions? actions ) )
 			end
 		end
 
@@ -434,6 +419,21 @@ module Graph
 				@packet_count = 0
 				@byte_count = 0
 			end
+		end
+
+		private
+		def do_delete_db_entry entry_id
+			client = Graph::DB.get_accessor
+			client.prepare( "delete from entries where entry_id = #{entry_id}" ).execute
+
+			client.close
+		end
+	
+		def do_delete_db_stat entry_id
+			client = Graph::DB.get_accessor
+			client.prepare( "delete from flowstats where entry_id = #{entry_id}" ).execute
+
+			client.close
 		end
 	end
 end

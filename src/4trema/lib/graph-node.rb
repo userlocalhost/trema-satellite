@@ -1,4 +1,4 @@
-require 'graph-db'
+require 'lib/graph-db'
 
 module Graph
 	class NodeType
@@ -25,7 +25,6 @@ module Graph
 		DB_PASS = 'airone'
 		DB_NAME = 'graph'
 
-		attr_accessor :rx_packets, :tx_packets, :rx_bytes, :tx_bytes
 		attr_reader :dpid, :portnum, :neighbor, :node_id
 
 		@@ports = []
@@ -34,10 +33,11 @@ module Graph
 			@dpid = dpid
 			@portnum = portnum
 			@neighbor = 0			# this member indicates the node-id
-			@rx_packets = 0
-			@tx_packets = 0
-			@rx_bytes = 0
-			@tx_bytes = 0
+
+			@prev_rx_packets = 0
+			@prev_tx_packets = 0
+			@prev_rx_bytes = 0
+			@prev_tx_bytes = 0
 
 			@node_id = ( isin_db? ) ? get_nodeid : Graph::Port.add_node
 		end
@@ -53,14 +53,41 @@ module Graph
 			client = Graph::DB.get_accessor
 
 			query = client.query "select * from ports where dpid = #{@dpid} and portnum = #{@portnum}"
+			client.close
 
 			return (query.num_rows > 0) ? true : false
 		end
 
 		def get_nodeid
-			query = Graph::DB.get_accessor.query("select node_id from ports where dpid = #{@dpid} and portnum = #{@portnum}")
+			client = Graph::DB.get_accessor
+
+			query = client.query("select node_id from ports where dpid = #{@dpid} and portnum = #{@portnum}")
+
+			client.close
 
 			return (query != nil) ? query.fetch_row : nil
+		end
+
+		def store_db_stats rx_p, tx_p, rx_b, tx_b
+			client = Graph::DB.get_accessor
+
+			rx_pd = rx_p - @prev_rx_packets
+			tx_pd = tx_p - @prev_tx_packets
+			rx_bd = rx_b - @prev_rx_bytes
+			tx_bd = tx_b - @prev_tx_bytes
+
+			sql = "insert into portstats
+					(dpid, portnum, node_id, rx_packets, tx_packets, rx_bytes, tx_bytes) values
+					(#{@dpid}, #{@portnum}, #{@node_id}, #{rx_pd}, #{tx_pd}, #{rx_bd}, #{tx_bd})"
+
+			client.prepare( sql ).execute
+
+			$prev_rx_packets = rx_p
+			$prev_tx_packets = tx_p
+			$prev_rx_bytes = rx_b
+			$prev_tx_bytes = tx_b
+
+			client.close
 		end
 
 		def store_db
@@ -68,16 +95,11 @@ module Graph
 			client = Graph::DB.get_accessor
 
 			if isin_db? then
-				sql = "update ports set
-								connection_to = #{@neighbor},
-								rx_packets = #{@rx_packets},
-								tx_packets = #{@tx_packets},
-								rx_bytes = #{@rx_bytes},
-								tx_bytes = #{@tx_bytes} where dpid = #{@dpid} and portnum = #{@portnum}"
+				sql = "update ports set connection_to = #{@neighbor} where dpid = #{@dpid} and portnum = #{@portnum}"
 			else
 				sql = "insert into ports 
-								(dpid, node_id, portnum, connection_to, rx_packets, tx_packets, rx_bytes, tx_bytes) values
-								(#{@dpid}, #{@node_id}, #{@portnum}, #{@neighbor}, #{@rx_packets}, #{@tx_packets}, #{@rx_bytes}, #{@tx_bytes})"
+								(dpid, node_id, portnum, connection_to) values
+								(#{@dpid}, #{@node_id}, #{@portnum}, #{@neighbor})"
 			end
 
 			if sql.length > 0 then
@@ -85,16 +107,14 @@ module Graph
 
 				stmt.execute
 			end
+
+			client.close
 		end
 		
 		def self.dump
 			print "[Port] ==== (dump) ====\n"
 			@@ports.each do |each|
 				print "[Port] (dump) [#{each.dpid}:#{each.portnum}] neighbor: #{each.neighbor}\n"
-				print "[Port] (dump) [#{each.dpid}:#{each.portnum}] rx_packets: #{each.rx_packets}\n"
-				print "[Port] (dump) [#{each.dpid}:#{each.portnum}] tx_packets: #{each.tx_packets}\n"
-				print "[Port] (dump) [#{each.dpid}:#{each.portnum}] rx_bytes: #{each.rx_bytes}\n"
-				print "[Port] (dump) [#{each.dpid}:#{each.portnum}] tx_bytes: #{each.tx_bytes}\n"
 			end
 			print "[Port] ================\n"
 		end
@@ -123,7 +143,13 @@ module Graph
 
 		# This routine returns node_id that
 		def self.add_node
-			Graph::DB.get_accessor.prepare("insert into nodes (type) values (#{NodeType.port})").execute.insert_id
+			client = Graph::DB.get_accessor
+
+			ret = client.prepare("insert into nodes (type) values (#{NodeType.port})").execute.insert_id
+
+			client.close
+
+			return ret
 		end
 	end
 
@@ -157,6 +183,7 @@ module Graph
 				sql = "insert into hosts (node_id, neighbor, dladdr, nwaddr) values (#{@node_id}, #{@neighbor}, '#{@mac}', '#{@ip}')"
 
 				client.prepare( sql ).execute
+				client.close
 			end
 		end
 
@@ -166,11 +193,17 @@ module Graph
 
 			query = client.query sql
 
+			client.close
+
 			return (query.num_rows > 0) ? true : false
 		end
 
 		def get_nodeid
-			query = Graph::DB.get_accessor.query("select node_id from hosts where dladdr = '#{@mac}' and nwaddr = '#{@ip}'")
+			client = Graph::DB.get_accessor
+
+			query = client.query("select node_id from hosts where dladdr = '#{@mac}' and nwaddr = '#{@ip}'")
+
+			client.close
 
 			return (query != nil) ? query.fetch_row : nil
 		end
@@ -188,7 +221,11 @@ module Graph
 		end
 
 		def self.add_node
-			insert_id = Graph::DB.get_accessor.prepare("insert into nodes (type) values (#{NodeType.host})").execute.insert_id
+			client = Graph::DB.get_accessor
+
+			insert_id = client.prepare("insert into nodes (type) values (#{NodeType.host})").execute.insert_id
+
+			client.close
 
 			return insert_id
 		end

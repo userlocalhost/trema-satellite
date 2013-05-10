@@ -59,7 +59,8 @@ class GraphController < Controller
     send_flow_mod_add(
       datapath_id,
       :match => ExactMatch.from( message ),
-      :actions => ActionOutput.new( :port => port_no )
+      :actions => ActionOutput.new( :port => port_no ),
+			:idle_timeout => 20
     )
   end
 
@@ -78,7 +79,7 @@ class GraphController < Controller
   end
 end
 
-require "graph.rb"
+require "lib/graph.rb"
 
 ### Local variables:
 ### mode: Ruby
