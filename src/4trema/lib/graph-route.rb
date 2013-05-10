@@ -1,4 +1,4 @@
-require 'graph-entry'
+require 'lib/graph-entry'
 require 'mysql'
 require 'time'
 

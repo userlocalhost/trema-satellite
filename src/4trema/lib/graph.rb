@@ -1,6 +1,6 @@
-require 'graph-node'
-require 'graph-route'
-require 'graph-entry'
+require 'lib/graph-node'
+require 'lib/graph-route'
+require 'lib/graph-entry'
 
 class Intervals
 	def initialize(interval, &block)
@@ -133,27 +133,17 @@ class GraphController
 			case each
 			when PortStatsReply
 				port = Graph::Port.get dpid, each.port_no
-				port.rx_packets = each.rx_packets
-				port.tx_packets = each.tx_packets
-				port.rx_bytes = each.rx_bytes
-				port.tx_bytes = each.tx_bytes
 
 				# store database
-				port.store_db
+				port.store_db_stats each.rx_packets, each.tx_packets, each.rx_bytes, each.tx_bytes
 			when FlowStatsReply
 				entry = Graph::Entry.isin dpid, each.match, each.actions
 
 				if entry then
-					entry.stats.duration_sec = each.duration_sec
-					entry.stats.duration_nsec = each.duration_nsec
-					entry.stats.priority = each.priority
-					entry.stats.idle_timeout = each.idle_timeout
-					entry.stats.hard_timeout = each.hard_timeout
-					entry.stats.cookie = each.cookie
 					entry.stats.packet_count = each.packet_count
 					entry.stats.byte_count = each.byte_count
 
-					entry.update_db_stats
+					entry.insert_db_stats
 				else
 					info "[stats_reply] (FlowStatsReply) (ERROR) fail to find Graph::Entry object"
 				end
@@ -163,6 +153,14 @@ class GraphController
 		end
 
 		stats_reply_orig dpid, msg if defined? stats_reply_orig
+	end
+
+	alias :flow_removed_orig :flow_removed if GraphController.method_defined? :flow_removed
+	def flow_removed dpid, msg
+		entry = Graph::Entry.isin dpid, msg.match
+		if entry != nil then
+			entry.delete_db
+		end
 	end
 
 	private
