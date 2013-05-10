@@ -1,16 +1,13 @@
+require "config"
+
 module Graph
 	class DB
-		HOST = 'localhost'
-		USER = 'root'
-		PASS = 'airone'
-		NAME = 'graph'
-
 		# to use initialization
 		TABLES = [ 'actions', 'entries', 'portstats', 'flowstats', 
 			'hosts', 'nodes', 'ports', 'switches' ]
 
 		def self.get_accessor
-			return Mysql.connect(HOST, USER, PASS, NAME)
+			return Mysql.connect(Config::DB_HOST, Config::DB_USER, Config::DB_PASSWD, Config::DB_NAME)
 		end
 
 		def self.clear
