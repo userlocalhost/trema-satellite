@@ -1,3 +1,6 @@
 *.swp
 work/
 tools/
+src/4trema-edge
+src/4trema/config.rb
+rack/config.rb

@@ -1,0 +1,217 @@
+<html>
+	<head>
+		<meta content="text/html" charset="UTF-8">
+		<script type="text/javascript" src="js/protovis.js"></script>
+		<script type="text/javascript" src="js/date.js"></script>
+	</head>
+	<body>
+		<div>
+		<script type="text/javascript+protovis">
+
+function make_selection(selection, index, text) {
+	var height = 20;
+	var width = 100;
+	var base_margin = 10;
+	var text_margin = 20;
+
+	selection.add(pv.Bar)
+			.data([index])
+			.cursor("pointer")
+			.top(base_margin + (i * (height + base_margin)))
+			.left(base_margin)
+			.width(width)
+			.height(height)
+			.fillStyle(fcolor(index))
+			.event('click', function(d) {
+				graph_view.visible(false);
+
+				graph_view = graph.add(pv.Panel)
+				make_graph(graph_view, raw_data, d);
+
+				this.root.render();
+			})
+		.anchor('right').add(pv.Label)
+			.left(width + text_margin)
+			.font('24px monospace')
+			.textAlign('left')
+			.text(text);
+}
+
+function make_graph_selection(graph) {
+	var graph_range = {x:0, dx:0};
+	graph.add(pv.Panel)
+		.data([graph_range])
+			.cursor("crosshair")
+			.events("all")
+			.event("mousedown", pv.Behavior.select())
+			.event("select", graph)
+		.add(pv.Bar)
+			.left(function(d) d.x)
+			.width(function(d) d.dx)
+			.strokeStyle("rgba(0, 0, 0, .1)")
+			.fillStyle("rgba(255, 128, 128, .4)")
+			.cursor("move")
+			.event("mousedown", pv.Behavior.drag())
+			.event("mouseup", function(d) {
+					console.log('[mouseup] ('+d.x+', '+d.dx+')');
+				})
+			.event("drag", graph);
+}
+
+function draw_graph_context(panel, input, color, alpha, max, nim) {
+	var max = Math.max.apply(null, input);
+	var min = Math.min.apply(null, input);
+
+	var fw = pv.Scale.linear(0, input.length-1).range(0, width);
+	var fh = pv.Scale.linear(0, max + min).range(0, height);
+	
+	panel.add(pv.Area)
+			.data(input)
+			.left(function(d) fw(this.index))
+			.height(fh)
+			.fillStyle(function(d) color.alpha(alpha))
+			.bottom(0)
+		.anchor("top").add(pv.Line)
+			.fillStyle(null)
+			.strokeStyle("rgba(0xc2, 0xc2, 0xc2, "+alpha+")")
+			.lineWidth(2);
+}
+
+function make_graph(graph, data, index) {
+	var data_array = data.map(function(x) x.input);
+	var falpha = pv.Scale.linear(0, data_array.length-1).range(.2, .4);
+	
+	for(var i=0; i<data_array.length; i++) {
+		if(i == index) {
+			continue;
+		}
+	
+		draw_graph_context(graph.add(pv.Panel), data_array[i], fcolor(i), falpha(i));
+	}
+
+	var max_value = Math.max.apply(null, data_array[index]);
+	var min_value = Math.min.apply(null, data_array[index]);
+
+	console.log("[make_graph] (min, max) = ("+min_value+", "+max_value+")");
+
+	var start_time = new Date("<%= @start_time %>");
+	var last_time = new Date("<%= @last_time %>");
+
+	var f_x = pv.Scale.linear(start_time.getTime(), last_time.getTime()).range(0, width);
+	var f_y = pv.Scale.linear(0, max_value + min_value).range(0, height);
+	var t_format = 'yyyy/MM/dd HH:mm:ss';
+	
+	// for Y-axis
+	graph.add(pv.Rule)
+			.data(f_y.ticks())
+			.bottom(f_y)
+			.strokeStyle(function(d) d ? "#c1c1c1" : "#000")
+	  .anchor("left").add(pv.Label)
+	    .visible(function(d) d > 0)
+	    .text(f_y.tickFormat);
+	
+	// for X-axis
+	graph.add(pv.Rule)
+			.data(f_x.ticks(10))
+			.left(f_x)
+			.strokeStyle(function(d) d ? "#c1c1c1" : "#000")
+		.add(pv.Label)
+			.bottom(-20)
+			.textAngle( Math.PI / 8 )
+			.text( function(s) comDateFormat(new Date(s), t_format) );
+	
+	draw_graph_context(graph, data_array[index], fcolor(index), .9);
+	
+	graph.add(pv.Label)
+		.left(-30)
+		.bottom(height + 10)
+		.text('[bytes]');
+	
+	graph.add(pv.Label)
+		.left(width + 10)
+		.bottom(-20)
+		.text('[time]');
+
+	make_graph_selection(graph);
+}
+
+function get_rawdata() {
+	var labels = ['rx_packets', 'tx_packets', 'rx_bytes', 'tx_bytes'];
+
+	var raw_data = [
+	<% @portstats.each do |each| %>
+		{
+			rx_packets: <%= each[:rx_packets] %>,
+			tx_packets: <%= each[:tx_packets] %>,
+			rx_bytes: <%= each[:rx_bytes] %>,
+			tx_bytes: <%= each[:tx_bytes] %>,
+		},
+	<% end %>
+	];
+
+	/*
+	var data = new Array();
+	for(var i in labels) {
+		data.push({
+				label: labels[i],
+				input: raw_data.map(function(d) d[key]),
+		});
+	}
+			*/
+
+	return labels.map(function(label) {
+		return {
+			label: label,
+			input: raw_data.map(function(d) d[label]),
+		};
+	});
+}
+
+var raw_data = get_rawdata();
+
+var width = 500;
+var height = 200;
+
+var margin = 40;
+var margin_bottom = 100;
+
+var selection_margin_left = 50;
+var selection_width = 300;
+
+var selection_index = 2;
+var start_time = new Date("<%= @start_time %>");
+var last_time = new Date("<%= @last_time %>");
+
+var fcolor = pv.Scale.linear(0, raw_data.length - 1).range("#1f77b4", "#ff7f0e");
+
+var root = new pv.Panel()
+	.width(width + selection_width)
+	.height(height + margin_bottom)
+	.margin(margin)
+
+var graph = root.add(pv.Panel)
+	.width(width)
+	.height(height)
+	.left(0)
+	.strokeStyle("#ccc");
+
+var selection = root.add(pv.Panel)
+	.width(selection_width)
+	.height(height)
+	.left(width + selection_margin_left)
+	.fillStyle("#ccc");
+
+var labels = raw_data.map(function(x) x.label);
+for(var i=0; i<labels.length; i++) {
+	make_selection(selection, i, labels[i]);
+}
+
+var graph_view = graph.add(pv.Panel)
+make_graph(graph_view, raw_data, selection_index);
+
+root.render();
+
+		</script>
+		</div>
+	</body>
+</html>
