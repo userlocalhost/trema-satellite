@@ -15,6 +15,8 @@ PortTraffic = function() {
 	var start_time;
 	var last_time;
 	var fcolor;
+	var graph_panel;
+	var root_panel;
 
 	return {
 
@@ -42,10 +44,10 @@ PortTraffic = function() {
 				.height(height)
 				.fillStyle(fcolor(index))
 				.event('click', function(index) {
-					graph_view.visible(false);
+					graph_panel.visible(false);
 	
-					graph_view = graph.add(pv.Panel)
-					PortTraffic.make_graph(graph_view, raw_data, index);
+					graph_panel = root_panel.add(pv.Panel)
+					PortTraffic.make_graph(graph_panel, raw_data, index);
 	
 					this.root.render();
 				})
@@ -77,12 +79,12 @@ PortTraffic = function() {
 				.event("drag", graph);
 	},
 	
-	draw_graph_context: function(panel, input, color, alpha, max, nim) {
+	draw_graph_context: function(panel, input, color, alpha) {
 		var max = Math.max.apply(null, input);
 		var min = Math.min.apply(null, input);
 	
 		var fw = pv.Scale.linear(0, input.length-1).range(0, SCREEN_WIDTH);
-		var fh = pv.Scale.linear(0, max + min).range(0, SCREEN_HEIGHT);
+		var fh = pv.Scale.linear(0, max * 1.3).range(0, SCREEN_HEIGHT);
 		
 		panel.add(pv.Area)
 				.data(input)
@@ -164,7 +166,7 @@ PortTraffic = function() {
 			.height(SCREEN_HEIGHT + MARGIN_BOTTOM)
 			.margin(MARGIN)
 		
-		var graph = root.add(pv.Panel)
+		root_panel = root.add(pv.Panel)
 			.width(SCREEN_WIDTH)
 			.height(SCREEN_HEIGHT)
 			.left(0)
@@ -181,8 +183,8 @@ PortTraffic = function() {
 			this.make_selection(selection, i, labels[i]);
 		}
 		
-		var graph_view = graph.add(pv.Panel)
-		this.make_graph(graph_view, raw_data, SELECTION_INDEX);
+		graph_panel = root_panel.add(pv.Panel)
+		this.make_graph(graph_panel, raw_data, SELECTION_INDEX);
 		
 		root.render();
 	},
