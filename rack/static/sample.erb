@@ -1,0 +1,26 @@
+<html>
+	<head>
+		<meta content="text/html" charset="UTF-8">
+		<script type="text/javascript" src="js/protovis.js"></script>
+		<script type="text/javascript" src="js/date.js"></script>
+		<script type="text/javascript+protovis">
+			<%= @file_port_traffic %>
+
+			var portstats = [
+			<% @portstats.each do |each| %>
+				{
+					label: "<%= each[:label] %>",
+					input: [ <%= each[:input].join(',') %> ],
+				},
+			<% end %>
+			];
+			
+			PortTraffic.init(portstats, new Date("<%= @start_time %>"), new Date("<%= @last_time %>"));
+			
+			PortTraffic.draw('port_graph');
+		</script>
+	</head>
+	<body>
+		<div id='port_graph'></div>
+	</body>
+</html>

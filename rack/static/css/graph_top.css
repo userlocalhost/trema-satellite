@@ -1,0 +1,83 @@
+.graph_main {
+	width: 800px;
+	height: 400px;
+
+	margin-right: auto;
+	margin-left: auto;
+
+	display: -webkit-box;
+	display: -moz-box;
+	display: -ms-box;
+}
+
+.graph_main .selection {
+	width: 300px;
+	height: 400px;
+
+	padding: 20px;
+
+	background-color: #ddccee;
+}
+
+.selection .title {
+	padding: 5px;
+}
+
+#route_selection {
+	width: 200px;
+}
+
+.view_container .views {
+	width: 1200px;;
+	margin-right: auto;
+	margin-left: auto;
+	padding-right: 100px;
+}
+
+.views {
+	display: -webkit-box;
+	display: -moz-box;
+	display: -ms-box;
+}
+
+.views .inner_view {
+	background-color: #efefef;
+	width: 50%;
+	height: 200px;
+	padding: 10px;
+	margin: 5px;
+
+	/* for shadow */
+	-moz-box-shadow: 5px 5px 5px #DDD;    /* firefox　*/
+	-webkit-box-shadow: 5px 5px 5px #DDD;  /* safari、chorme */
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+}
+
+.views .inner_view .context {
+	background-color: #dedbe0;
+	width: 98%;
+	height: 80%;
+
+	margin-top: 10px;
+
+	padding-left: 10px;
+	padding-top: 5px;
+
+	overflow-y: scroll;
+
+	/* for shadow */
+	border: 4px solid #efefef;
+	box-shadow: inset 4px 4px 4px #999;
+}
+
+pre {
+	white-space: pre;           /* CSS 2.0 */
+	white-space: pre-wrap;      /* CSS 2.1 */
+	white-space: pre-line;      /* CSS 3.0 */
+	white-space: -pre-wrap;     /* Opera 4-6 */
+	white-space: -o-pre-wrap;   /* Opera 7 */
+	white-space: -moz-pre-wrap; /* Mozilla */
+	white-space: -hp-pre-wrap;  /* HP Printers */
+	word-wrap: break-word;      /* IE 5+ */
+}
