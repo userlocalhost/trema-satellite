@@ -79,7 +79,7 @@ class GraphController < Controller
   end
 end
 
-require "lib/graph.rb"
+require "graph/graph.rb"
 
 ### Local variables:
 ### mode: Ruby
