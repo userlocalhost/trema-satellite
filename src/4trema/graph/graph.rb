@@ -136,10 +136,15 @@ class GraphController
 
 				# store database
 				port.store_db_stats each.rx_packets, each.tx_packets, each.rx_bytes, each.tx_bytes
+
+				port.save
 			when FlowStatsReply
 				entry = Graph::Entry.isin dpid, each.match, each.actions
 
 				if entry then
+					entry.stats.last_packet_count = entry.stats.packet_count
+					entry.stats.last_byte_count = entry.stats.byte_count
+
 					entry.stats.packet_count = each.packet_count
 					entry.stats.byte_count = each.byte_count
 

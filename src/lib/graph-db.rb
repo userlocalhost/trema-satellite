@@ -19,7 +19,7 @@ module Graph
 
 				ret = stmt.insert_id
 			elsif sql =~ /select (.*) from/
-				key = $1.delete(' ').split(',').map { |x| x.to_sym }
+				key = $1.delete("\n\t\s").split(',').map { |x| x.to_sym }
 
 				ret = Array.new
 				accr.query( sql ).each do |each|

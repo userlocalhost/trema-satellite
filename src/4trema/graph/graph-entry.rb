@@ -186,7 +186,7 @@ module Graph
 			entry_id = isin_db
 
 			do_delete_db_entry entry_id
-			do_delete_db_stat entry_id
+			#do_delete_db_stat entry_id
 		end
 
     # This routine returns entry_id. If no stored entry is matched, this returns -1.
@@ -324,8 +324,8 @@ module Graph
 				byte_count
 			) value (
 				#{entry_id},
-				#{@stats.packet_count},
-				#{@stats.byte_count}
+				#{ @stats.packet_count - @stats.last_packet_count },
+				#{ @stats.byte_count - @stats.last_byte_count }
 			)"
 		end
 
@@ -407,7 +407,8 @@ module Graph
 
 		class Stats
 			attr_accessor :duration_sec, :duration_nsec, :priority, :idle_timeout,
-				:hard_timeout, :cookie, :packet_count, :byte_count
+				:hard_timeout, :cookie, :packet_count, :byte_count,
+				:last_packet_count, :last_byte_count
 
 			def initialize
 				@duration_sec = 0
@@ -418,6 +419,8 @@ module Graph
 				@cookie = 0
 				@packet_count = 0
 				@byte_count = 0
+				@last_packet_count = 0
+				@last_byte_count = 0
 			end
 		end
 

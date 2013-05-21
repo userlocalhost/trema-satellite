@@ -43,16 +43,16 @@ class TmpApp
 		param_end = param.get 'time_end'
 
 		if param_start != nil && param_end != nil
-			data = Graph::DB.query(
-				"select entry_id, packet_count, byte_count, time from flowstats where 
-					#{ param_start[:value] } < unix_timestamp(time) and 
-					unix_timestamp(time) < #{ param_end[:value] }"
-				)
+
+			data = Graph::DB.query "select entry_id, packet_count, byte_count, time from flowstats where 
+				#{ param_start[:value] } < unix_timestamp(time) and 
+				unix_timestamp(time) < #{ param_end[:value] }"
 
 			ret = data.map { |x| x[:entry_id].to_i }.uniq.map do |id|
 				{ 
 					:id => id,
-					:data => data.select{ |entry| entry[:entry_id].to_i == id }.each{ |x| x.delete(:entry_id) }
+					:data => data.select{ |entry| entry[:entry_id].to_i == id }.each{ |x| x.delete(:entry_id) },
+					:match => Graph::DB.query( "select match_wildcards, match_in_port, match_dl_src, match_dl_dst, match_dl_vlan, match_dl_vlan_pcp, match_dl_type, match_nw_tos, match_nw_proto, match_nw_src, match_nw_dst, match_tp_src, match_tp_dst from entries where entry_id = #{ id }" ),
 				}
 			end
 		end
@@ -86,7 +86,7 @@ class TmpApp
 
 	def make_parameters
 		@file_port_traffic = File.read FILE_PORT_TRAFFIC
-		stats = Graph::DB.query 'select rx_packets, tx_packets, rx_bytes, tx_bytes, time from portstats where dpid = 1 and portnum = 1 limit 200'
+		stats = Graph::DB.query 'select rx_packets, tx_packets, rx_bytes, tx_bytes, time from portstats where dpid = 1 and portnum = 1 limit 500'
 
 		# for setting context parameter
 		@portstats = []

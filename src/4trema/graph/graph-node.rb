@@ -76,16 +76,16 @@ module Graph
 			rx_bd = rx_b - @prev_rx_bytes
 			tx_bd = tx_b - @prev_tx_bytes
 
+			@prev_rx_packets = rx_p
+			@prev_tx_packets = tx_p
+			@prev_rx_bytes = rx_b
+			@prev_tx_bytes = tx_b
+
 			sql = "insert into portstats
 					(dpid, portnum, node_id, rx_packets, tx_packets, rx_bytes, tx_bytes) values
 					(#{@dpid}, #{@portnum}, #{@node_id}, #{rx_pd}, #{tx_pd}, #{rx_bd}, #{tx_bd})"
 
 			client.prepare( sql ).execute
-
-			$prev_rx_packets = rx_p
-			$prev_tx_packets = tx_p
-			$prev_rx_bytes = rx_b
-			$prev_tx_bytes = tx_b
 
 			client.close
 		end
@@ -110,6 +110,13 @@ module Graph
 
 			client.close
 		end
+
+		def save
+			index = @@ports.index self
+
+			@@ports.delete_at index
+			@@ports << self
+		end
 		
 		def self.dump
 			print "[Port] ==== (dump) ====\n"
@@ -128,6 +135,8 @@ module Graph
 		def self.get dpid, portnum
 			port = _get dpid, portnum
 			if ! port || (! port.instance_of? self) then
+				print "[Port] (get) create a new Port object\n"
+
 				port = self.new dpid, portnum
 
 				@@ports << port
