@@ -49,7 +49,7 @@ PortTraffic = function() {
 					graph_panel = root_panel.add(pv.Panel)
 					PortTraffic.make_graph(graph_panel, raw_data, index);
 	
-					this.root.render();
+					this.root.render(Messenger.request);
 				})
 			.anchor('right').add(pv.Label)
 				.left(width + text_margin)
@@ -76,8 +76,12 @@ PortTraffic = function() {
 				.event("mouseup", function(d) {
 						var f_time = pv.Scale.linear(0, SCREEN_WIDTH).range(start_time.getTime(), last_time.getTime());
 
-						var range_start = f_time(d.x);
-						var range_end = f_time(d.x + d.dx);
+						params = {
+							'time_start': ( f_time(d.x) / 1000 ),
+							'time_end': ( f_time(d.x + d.dx) / 1000 ),
+						};
+
+						Messenger.request(Messenger.REQ_SHOW_FLOWSTATS, params);
 					})
 				.event("drag", graph);
 	},
@@ -139,6 +143,7 @@ PortTraffic = function() {
 	},
 	
 	make_graph: function(graph, data, index) {
+		var unit_label = data[index].unit;
 		var data_array = data.map(function(x) x.input);
 		var falpha = pv.Scale.linear(0, data_array.length-1).range(.2, .4);
 	
@@ -155,7 +160,7 @@ PortTraffic = function() {
 	
 		this.make_graph_axis(graph, start_time.getTime(), last_time.getTime(), 0, (min_value + max_value));
 	
-		this.make_graph_axis_title(graph, '[bytes]', '[time]');
+		this.make_graph_axis_title(graph, '', '( '+unit_label+' )');
 		
 		this.draw_graph_context(graph, data_array[index], fcolor(index), .9);
 	

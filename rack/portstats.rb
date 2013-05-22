@@ -9,7 +9,7 @@ require 'lib/log'
 
 require 'lib/http-util'
 
-class TmpApp
+class GraphAllPortStats
 	STATIC_DIR = 'static/'
 	TEMPLATE_ROOT = 'static/sample.erb'
 	FILE_PORT_TRAFFIC = 'static/js/port_traffic.js'
@@ -50,9 +50,9 @@ class TmpApp
 
 			ret = data.map { |x| x[:entry_id].to_i }.uniq.map do |id|
 				{ 
-					:id => id,
-					:data => data.select{ |entry| entry[:entry_id].to_i == id }.each{ |x| x.delete(:entry_id) },
-					:match => Graph::DB.query( "select match_wildcards, match_in_port, match_dl_src, match_dl_dst, match_dl_vlan, match_dl_vlan_pcp, match_dl_type, match_nw_tos, match_nw_proto, match_nw_src, match_nw_dst, match_tp_src, match_tp_dst from entries where entry_id = #{ id }" ),
+					:entry_id => id,
+					:stats => data.select{ |entry| entry[:entry_id].to_i == id }.each{ |x| x.delete(:entry_id) },
+					:match => Graph::DB.query( "select dpid, match_wildcards, match_in_port, match_dl_src, match_dl_dst, match_dl_vlan, match_dl_vlan_pcp, match_dl_type, match_nw_tos, match_nw_proto, match_nw_src, match_nw_dst, match_tp_src, match_tp_dst from entries where entry_id = #{ id }" )[0] ,
 				}
 			end
 		end
@@ -90,8 +90,16 @@ class TmpApp
 
 		# for setting context parameter
 		@portstats = []
-		[:rx_packets, :tx_packets, :rx_bytes, :tx_bytes].each do |label|
-			@portstats << { :label => label, :input => stats.map { |stat| stat[ label.to_sym ] } }
+		[ {:label => :rx_packets, :unit => 'packets'}, 
+			{:label => :tx_packets, :unit => 'packets'}, 
+			{:label => :rx_bytes, :unit => 'bytes'}, 
+			{:label => :tx_bytes, :unit => 'bytes'}
+		].each do |each|
+			@portstats << { 
+				:unit => each[:unit],
+				:label => each[:label],
+				:input => stats.map { |stat| stat[ each[:label].to_sym ] } 
+			}
 		end
 
 		# for setting time parameter

@@ -1,0 +1,53 @@
+#graph_board {
+	width: 70%;
+
+	margin-left: auto;
+	margin-right: auto;
+}
+
+#flowstats {
+	width: 80%;
+
+	margin-left: auto;
+	margin-right: auto;
+
+	background-color: #abcdef;
+}
+
+.entry_node {
+	width: 300px;
+
+	float: left;
+
+	margin: 20px;
+
+	background-color: #aeebbd;
+}
+
+.meta_info .leftside {
+	float: left;
+	padding: 10px;
+	font-weight: bold;
+	font-size: large;
+}
+
+.meta_info .rightside {
+	float: right;
+}
+
+.meta_info .value {
+	font-weight: bold;
+}
+
+.match {
+	clear: both;
+
+	padding: 5px;
+}
+
+.match pre {
+	clear: both;
+
+	padding: 5px;
+	background-color: #bffcce;
+}
