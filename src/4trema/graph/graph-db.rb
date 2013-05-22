@@ -15,7 +15,7 @@ module Graph
 			accr = get_accessor
 
 			if sql =~ /^insert into / then
-        stmt = client.prepare(sql).execute
+        stmt = accr.prepare(sql).execute
 
 				ret = stmt.insert_id
 			elsif sql =~ /select (.*) from/

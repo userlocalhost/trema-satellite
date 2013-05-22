@@ -67,19 +67,13 @@ class GraphController
 	alias :send_flow_mod_add_orig :send_flow_mod_add if GraphController.method_defined? :send_flow_mod_add
 	def send_flow_mod_add dpid, options
 
-		entry = Graph::Entry.isin dpid, options[:match], options[:actions]
-		if ! entry then
-			# エントリの作成
-			entry = Graph::Entry.new dpid, options[:match], options[:actions]
-		end
+		# エントリの作成
+		entry = Graph::Entry.new dpid, options[:match], options[:actions]
 
 		# エントリを既存の unknown 経路と結合する (可能であれば)
 		if ! Graph::Route.may_append_entry entry then
 			# 経路の作成
-			route = Graph::Route.new entry
-
-			# unknown 経路に設定
-			route.set_unknown
+			Graph::Route.create entry
 		end
 
 		Graph::Route.may_append_route
@@ -162,10 +156,21 @@ class GraphController
 
 	alias :flow_removed_orig :flow_removed if GraphController.method_defined? :flow_removed
 	def flow_removed dpid, msg
+
 		entry = Graph::Entry.isin dpid, msg.match
 		if entry != nil then
-			entry.delete_db
+			Graph::Route.remove_entry entry
+
+			entry.remove
 		end
+
+		p "[flow_removed_orig] removed an entry of (dpid:#{dpid})"
+
+		Graph::Route.dump_unknown
+		Graph::Route.dump_known
+
+		# データベースに保存
+		Graph::Entry.store_db
 	end
 
 	private

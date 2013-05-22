@@ -3,9 +3,11 @@ require 'graph/graph-route'
 module Graph
 	# 経路を構成する各スイッチのフローエントリ
 	class Entry
+		STATUS_IS_REMOVED = ( 1 << 0 );
+
 		@@entries = []
 
-		attr_reader :dpid, :match, :actions, :stats
+		attr_reader :dpid, :match, :actions, :stats, :status
 		attr_accessor :route_id, :route_index
 
 		def initialize dpid, match, actions
@@ -15,14 +17,23 @@ module Graph
 			@route_id = Route::UNKNOWN_ROUTE_ID
 			@route_index = -1
 			@stats = Stats.new
+			@status = 0
 
-			if ! @@entries.include? self then
-				@@entries << self
-			end
+			@@entries << self
 		end
 
 		def remove
 			@@entries.delete self
+
+			# set removed-flag
+			set_status STATUS_IS_REMOVED
+			@route_id = Route::UNKNOWN_ROUTE_ID
+			@route_index = -1
+
+			ret = isin_db
+			if ret != nil then
+				db_update_entry ret[:entry_id], Time.now.strftime("%Y-%m-%d %H:%M:%S")
+			end
 		end
 
 		# 当該エントリが引数で指定したエントリと結合可能かを判定する
@@ -182,138 +193,9 @@ module Graph
       return isin
     end
 
-		def delete_db
-			entry_id = isin_db
-
-			do_delete_db_entry entry_id
-			#do_delete_db_stat entry_id
-		end
-
-    # This routine returns entry_id. If no stored entry is matched, this returns -1.
-		def isin_db
-			ret = -1
-
-			sql = "select entry_id,
-										match_in_port,
-										match_dl_src,
-										match_dl_dst,
-										match_dl_vlan,
-										match_dl_vlan_pcp,
-										match_dl_type,
-										match_nw_tos,
-										match_nw_proto,
-										match_nw_src,
-										match_nw_dst,
-										match_tp_src,
-										match_tp_dst from entries where dpid = #{@dpid}"
-
-			client = Graph::DB.get_accessor
-			client.query(sql).each do 
-        | entry_id,\
-				match_in_port,\
-				match_dl_src,\
-				match_dl_dst,\
-				match_dl_vlan,\
-				match_dl_vlan_pcp,\
-				match_dl_type,\
-				match_nw_tos,\
-				match_nw_proto,\
-				match_nw_src,\
-				match_nw_dst,\
-				match_tp_src,\
-				match_tp_dst |
-
-        dl_src = Mac.new match_dl_src
-        dl_dst = Mac.new match_dl_dst
-        nw_src = IP.new match_nw_src
-        nw_dst = IP.new match_nw_dst
-
-				match = Match.new :in_port => match_in_port.to_i > 0 ? match_in_port.to_i : nil,
-					:dl_src => dl_src.value > 0 ? dl_src.to_s : nil,
-					:dl_dst => dl_dst.value > 0 ? dl_dst.to_s : nil,
-					:dl_vlan => match_dl_vlan.to_i > 0 ? match_dl_vlan.to_i : nil,
-					:dl_vlan_pcp => match_dl_vlan_pcp.to_i > 0 ? match_dl_vlan_pcp.to_i : nil,
-					:dl_type => match_dl_type.to_i > 0 ? match_dl_type.to_i : nil,
-					:nw_tos => match_nw_tos.to_i > 0 ? match_nw_tos.to_i : nil,
-					:nw_proto => match_nw_proto.to_i > 0 ? match_nw_proto.to_i : nil,
-					:nw_src => nw_src.to_i > 0 ? nw_src.to_i : nil,
-					:nw_dst => nw_dst.to_i > 0 ? nw_dst.to_i : nil,
-					:tp_src => match_tp_src.to_i > 0 ? match_tp_src.to_i : nil,
-					:tp_dst => match_tp_dst.to_i > 0 ? match_tp_dst.to_i : nil
-
-        if is_same_match? match then
-          ret = entry_id.to_i
-          break
-        end
-			end
-
-			client.close
-
-			return ret
-		end
-
-    def store_db_entry entry_id = -1
-			sql = "insert into entries (
-				created_time, 
-				dpid,
-				route_id, 
-				route_index,
-				match_wildcards,
-				match_in_port,
-				match_dl_src,
-				match_dl_dst,
-				match_dl_vlan,
-				match_dl_vlan_pcp,
-				match_dl_type,
-				match_nw_tos,
-				match_nw_proto,
-				match_nw_src,
-				match_nw_dst,
-				match_tp_src,
-				match_tp_dst
-			) value (
-				now(), 
-				#{@dpid}, 
-				#{@route_id},
-				#{@route_index},
-				#{@match.wildcards},
-				#{@match.in_port},
-				'#{@match.dl_src.to_s}',
-				'#{@match.dl_dst.to_s}',
-				#{@match.dl_vlan},
-				#{@match.dl_vlan_pcp},
-				#{@match.dl_type},
-				#{@match.nw_tos},
-				#{@match.nw_proto},
-				'#{@match.nw_src.to_s}',
-				'#{@match.nw_dst.to_s}',
-				#{@match.tp_src},
-				#{@match.tp_dst}
-			)"
-
-			if entry_id > 0 then
-				sql = "update entries set 
-					route_id = #{@route_id},
-					route_index = #{@route_index} where entry_id = #{entry_id}"
-			end
-
-			client = Graph::DB.get_accessor
-
-			stmt = client.prepare sql
-				
-			# execute query
-			stmt.execute
-
-			ret = stmt.insert_id
-
-			client.close
-
-      return ret
-    end
-
 		def insert_db_stats
-			entry_id = isin_db
-			if entry_id < 0 then
+			ret = isin_db
+			if ret == nil then
 				print "[ERROR] fail to get entry(dpid:#{@dpid}, rid:#{@route_id}) from DB\n"
 				return
 			end
@@ -323,7 +205,7 @@ module Graph
 				packet_count,
 				byte_count
 			) value (
-				#{entry_id},
+				#{ret[:entry_id]},
 				#{ @stats.packet_count - @stats.last_packet_count },
 				#{ @stats.byte_count - @stats.last_byte_count }
 			)"
@@ -369,15 +251,16 @@ module Graph
     end
 
 		def store_db
-			entry_id = isin_db
-      if entry_id > 0 then
-				store_db_entry entry_id
-			else
+			ret = isin_db
+
+      if ret == nil then
         # Store a new entry corresponding to Entry object
-        entry_id = store_db_entry
+        entry_id = db_insert_entry
 
         # Store new entries corresponding to @action
         store_db_action entry_id
+			else
+				db_update_entry ret[:entry_id]
       end
 		end
 
@@ -425,18 +308,81 @@ module Graph
 		end
 
 		private
-		def do_delete_db_entry entry_id
-			client = Graph::DB.get_accessor
-			client.prepare( "delete from entries where entry_id = #{entry_id}" ).execute
-
-			client.close
+		def db_update_entry entry_id, removed_time = '0000-00-00 00:00:00'
+			Graph::DB.query "update entries set
+				route_id = #{@route_id},
+				route_index = #{@route_index} ,
+				removed_time = '#{removed_time}',
+				status = #{@status} where entry_id = #{entry_id}"
 		end
-	
-		def do_delete_db_stat entry_id
-			client = Graph::DB.get_accessor
-			client.prepare( "delete from flowstats where entry_id = #{entry_id}" ).execute
 
-			client.close
+    def db_insert_entry
+			Graph::DB.query "insert into entries (
+				dpid,
+				route_id, 
+				route_index,
+				match_wildcards,
+				match_in_port,
+				match_dl_src,
+				match_dl_dst,
+				match_dl_vlan,
+				match_dl_vlan_pcp,
+				match_dl_type,
+				match_nw_tos,
+				match_nw_proto,
+				match_nw_src,
+				match_nw_dst,
+				match_tp_src,
+				match_tp_dst
+			) value (
+				#{@dpid}, 
+				#{@route_id},
+				#{@route_index},
+				#{@match.wildcards},
+				#{@match.in_port},
+				'#{@match.dl_src.to_s}',
+				'#{@match.dl_dst.to_s}',
+				#{@match.dl_vlan},
+				#{@match.dl_vlan_pcp},
+				#{@match.dl_type},
+				#{@match.nw_tos},
+				#{@match.nw_proto},
+				'#{@match.nw_src.to_s}',
+				'#{@match.nw_dst.to_s}',
+				#{@match.tp_src},
+				#{@match.tp_dst}
+			)"
+    end
+
+    # This routine returns entry_id. If no stored entry is matched, this returns -1.
+		def isin_db
+			( Graph::DB.query "select entry_id from entries 
+							where dpid = #{ @dpid } and 
+								status != #{ STATUS_IS_REMOVED } and
+								match_in_port = #{ @match.in_port } and
+								match_dl_src = '#{ @match.dl_src.to_s }' and
+								match_dl_dst = '#{ @match.dl_dst.to_s }' and
+								match_dl_vlan = #{ @match.dl_vlan } and
+								match_dl_vlan_pcp = #{ @match.dl_vlan_pcp } and
+								match_dl_type = #{ @match.dl_type } and
+								match_nw_tos = #{ @match.nw_tos } and
+								match_nw_proto = #{ @match.nw_proto } and
+								match_nw_src = '#{ @match.nw_src.to_s }' and
+								match_nw_dst = '#{ @match.nw_dst.to_s }' and
+								match_tp_src = #{ @match.tp_src } and
+								match_tp_dst = #{ @match.tp_dst }" ).first
+		end
+
+		def set_status val
+			@status |= val
+		end
+
+		def get_status val
+			( @status & val > 0 )
+		end
+
+		def del_status val
+			@status &= ~val
 		end
 	end
 end

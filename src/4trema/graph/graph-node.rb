@@ -135,8 +135,6 @@ module Graph
 		def self.get dpid, portnum
 			port = _get dpid, portnum
 			if ! port || (! port.instance_of? self) then
-				print "[Port] (get) create a new Port object\n"
-
 				port = self.new dpid, portnum
 
 				@@ports << port

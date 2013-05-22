@@ -6,6 +6,8 @@ module Graph
 	class Route
 		UNKNOWN_ROUTE_ID = 0
 
+		@@last_route_id = 1
+
 		# 不完全な (see. doc/implementation.txt) 経路のリスト [Array of Route]
 		@@unknown = []
 
@@ -28,47 +30,13 @@ module Graph
 			end
 		end
 
-		# unknown 経路に設定
-		def set_unknown
-			if ! @@unknown.include? self then
-				@id = UNKNOWN_ROUTE_ID
-
-				@@unknown << self
-			end
-		end
-
-		def set_known
-			if ! @@known.include? self then
-				@id = @@known.length + 1
-
-				#@entries.each { |x| x.route_id = @id }
-				@entries.each_with_index do |each, index|
-					each.route_id = @id 
-					each.route_index = index
-				end
-
-				@@known << self
-			end
-
-			remove_from_unknown
-		end
-
-		# 当該経路を unknown リストから削除
-		def remove_from_unknown
-			@@unknown.delete self
-		end
-
-		def remove_from_known
-			@@known.delete self
-		end
-
 		def set_entry entry
 			if ! @entries.include? entry then
 				@entries << entry
 			end
 		end
 
-		def remove_entry entry
+		def unset_entry entry
 			@entries.delete entry
 		end
 
@@ -112,13 +80,51 @@ module Graph
 			return ret
 		end
 
-		# unknown 経路の中から known な経路を抽出する
 		def check_termination
-			@@unknown.each do |each|
-				if each.entries.first.is_from_host? && each.entries.last.is_to_host? then
-					each.set_known
+			if @entries.first.is_from_host? && @entries.last.is_to_host? && is_continuous then
+				if @@unknown.include? self then
+					set_known
+				end
+			else
+				if @@known.include? self then
+					set_unknown
 				end
 			end
+		end
+	
+		def set_known
+			if ! @@known.include? self then
+				@@last_route_id += 1
+
+				@entries.each_with_index do |each, index|
+					each.route_id = @@last_route_id
+					each.route_index = index
+				end
+	
+				@@known << self
+				@@unknown.delete self
+			end
+		end
+	
+		# unknown 経路に設定
+		def set_unknown
+			if ! @@unknown.include? self then
+				@id = UNKNOWN_ROUTE_ID
+	
+				@@unknown << self
+				@@known.delete self
+			end
+		end
+
+		# ######################### #
+		# Here is the class methods #
+		# ######################### #
+		
+		# create a new entry and set it into the unknown-list
+		def self.create entry
+			route = Graph::Route.new entry
+
+			route.set_unknown
 		end
 
 		# unknown 経路に指定したエントリを結合させる
@@ -172,6 +178,11 @@ module Graph
 			end
 		end
 
+		def self.remove_entry entry
+			do_remove_entry! @@unknown, entry
+			do_remove_entry! @@known, entry
+		end
+
 		def self.store_db
 			@@known.each do |each|
 				each.each { |x| x.store_db }
@@ -198,6 +209,44 @@ module Graph
 				print "\n"
 			end
 			print "[Route.dump_known] =============================\n"
+		end
+
+		private
+		# @entries メンバの始端と終端が接続可能かどうかを判定
+		def is_continuous
+			first = @entries.first
+			last = @entries.last 
+			prev = first
+	
+			@entries.each do |each|
+				if each == first || each == last
+					next
+				end
+	
+				if ! prev.is_appendable? each
+					return false
+				end
+	
+				prev = each
+			end
+	
+			return true
+		end
+
+		def self.do_remove_entry! list, entry
+			list.each do |each|
+				if each.entries.include? entry then
+					each.unset_entry entry
+
+					# remove target route from the @@unknown or @@known
+					list.delete each
+
+					# make routes for each the left of entry the removed route had.
+					each.entries.each do |entry|
+						Route.create entry
+					end
+				end
+			end
 		end
 	end
 end
