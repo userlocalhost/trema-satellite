@@ -1,5 +1,5 @@
 Config = function() {
-	const HOSTNAME = 'localhost';
+	const HOSTNAME = 'vmtrema';
 	const PORTNUM = 9292;
 
 	return {

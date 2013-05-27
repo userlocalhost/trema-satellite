@@ -8,8 +8,8 @@
 		<script type="text/javascript" src="js/messenger.js"></script>
 		<script type="text/javascript" src="js/protovis.js"></script>
 		<script type="text/javascript" src="js/date.js"></script>
+		<script type="text/javascript" src="js/port_graph.js"></script>
 		<script type="text/javascript+protovis">
-			<%= @file_port_traffic %>
 
 			var portstats = [
 			<% @portstats.each do |each| %>
@@ -21,9 +21,9 @@
 			<% end %>
 			];
 			
-			PortTraffic.init(portstats, new Date("<%= @start_time %>"), new Date("<%= @last_time %>"));
+			pgraph = new PortTraffic(portstats, new Date("<%= @start_time %>"), new Date("<%= @last_time %>"));
 			
-			PortTraffic.draw('port_graph');
+			pgraph.draw('port_graph');
 		</script>
 	</head>
 	<body>
