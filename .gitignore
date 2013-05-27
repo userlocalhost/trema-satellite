@@ -1,4 +1,4 @@
-*.swp
+*swp
 rack/config.rb
 rack/config.ru
 src/4trema/config.rb
