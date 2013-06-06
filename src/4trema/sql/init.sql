@@ -87,3 +87,11 @@ create table portstats (
 	time timestamp default current_timestamp(),
 	primary key (stats_id)
 );
+
+create table viewcomponents (
+	id int unsigned auto_increment not null,
+	type int unsigned not null,
+	href varchar(512),
+	options varchar(512),
+	primary key (id)
+);

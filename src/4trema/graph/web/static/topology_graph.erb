@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <meta content="text/html" charset="UTF-8">
+
+    <script type="text/javascript" src="js/protovis.js"></script>
+    <script type="text/javascript" src="js/topology_graph.js"></script>
+		<script type="text/javascript+protovis">
+			var screen = new Screen(600, 600, 'main_board', "<%= @graph_title %>");
+
+			<% @nodes.each do |each| %>
+				screen.add(<%= each[:dpid] %>, <%= each[:ports] %>)
+			<% end %>
+
+			<% @pathes.each do |each| %>
+				screen.path(<%= each[:src] %>, <%= each[:dst] %>, <%= each[:cur] %>, <%= each[:max] %>, <%= each[:frq] %>)
+			<% end %>
+
+			screen.draw();
+		</script>
+  </head>
+  <body>
+    <div id="main_board">
+    </div>
+  </body>
+</html>

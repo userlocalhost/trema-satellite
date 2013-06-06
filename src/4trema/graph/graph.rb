@@ -2,6 +2,11 @@ require 'graph/graph-node'
 require 'graph/graph-route'
 require 'graph/graph-entry'
 
+require 'graph/dsl/parser'
+
+require 'graph/web/component'
+require 'graph/web/runner'
+
 class Intervals
 	def initialize(interval, &block)
 		@th = Thread.new { self.main_loop }
@@ -39,11 +44,19 @@ class GraphController
 	PORT_STATS_INTERVAL = 5
 	FLOW_STATS_INTERVAL = 5
 
+	def load_config config_file
+		Graph::DSL::Parser.parse config_file
+	end
+
 	alias :start_orig :start if GraphController.method_defined? :start
 	def start
 		Graph::DB.clear
 
 		start_orig if defined? start_orig
+
+		pid = Graph::Web::Runner.run
+
+		p "[start_orig] pid: #{pid}"
 	end
 
 	alias :switch_ready_orig :switch_ready if GraphController.method_defined? :switch_ready
@@ -208,5 +221,13 @@ class GraphController
 
 	def get_portnum macsa, macda
 		( macda.to_s.split(':') + macsa.to_s.split(':') )[8..11].join.hex
+	end
+	
+	Signal.trap( :INT ) do
+		p "< SIGINT is redeived >"
+	end
+	
+	Signal.trap( :TERM ) do
+		p "< SIGTERM is redeived >"
 	end
 end

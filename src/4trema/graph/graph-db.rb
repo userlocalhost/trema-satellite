@@ -5,7 +5,7 @@ module Graph
 	class DB
 		# to use initialization
 		TABLES = [ 'actions', 'entries', 'portstats', 'flowstats', 
-			'hosts', 'nodes', 'ports', 'switches' ]
+			'hosts', 'nodes', 'ports', 'switches', 'viewcomponents' ]
 
 		def self.get_accessor
 			return Mysql.connect(Config::DB_HOST, Config::DB_USER, Config::DB_PASSWD, Config::DB_NAME)
