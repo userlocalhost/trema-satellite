@@ -11,6 +11,10 @@ module Graph
 				RECENT_COLUMNS = 50;
 				THREASHOLD = 4;
 
+				# XXX
+				# This shoulud be get by config-message for each physical port.
+				MAXIMUM_BANDWIDTH = ( 100000000 ) 
+
 				def initialize stanza
 					super stanza
 				end
@@ -82,24 +86,28 @@ module Graph
 					data.each do |each|
 						dst_node = data.find { |x| x[:node_id] == each[:connection_to] }
 						portstats = Graph::DB.query "select rx_packets, tx_packets, rx_bytes, tx_bytes from portstats where node_id = '#{each[:node_id]}'"
-			
-						maximum = portstats.map{ |x| ( x[:rx_bytes].to_i + x[:tx_bytes].to_i ) }.max
-						current = portstats[0, RECENT_COLUMNS].inject(0) do |sum, x|
-							sum + x[:rx_bytes].to_i + x[:tx_bytes].to_i
-						end / RECENT_COLUMNS
-			
-						frequency = portstats[0, RECENT_COLUMNS].inject(0) do |sum, x|
-							(( x[:rx_packets].to_i + x[:tx_packets].to_i ) > THREASHOLD ) ? sum + 1.0 : sum
-						end / RECENT_COLUMNS
-			
-						pathes << {
-							:src => each[:dpid],
-							:port => each[:portnum],
-							:dst => dst_node[:dpid],
-							:cur => current,
-							:max => maximum,
-							:frq => frequency,
-						} if dst_node != nil 
+		
+						if dst_node != nil then
+							path = {
+								:src => each[:dpid],
+								:port => each[:portnum],
+								:dst => dst_node[:dpid],
+							}
+
+							if option? 'heatmap' then
+								current = portstats[0, RECENT_COLUMNS].inject(0) do |sum, x|
+									sum + x[:rx_bytes].to_i + x[:tx_bytes].to_i
+								end / RECENT_COLUMNS
+
+								path[ :heatmap ] = {
+									:cur => current,
+									:max => MAXIMUM_BANDWIDTH,
+									:min => 0,
+								}
+							end
+
+							pathes << path
+						end
 					end
 			
 					return pathes.to_array

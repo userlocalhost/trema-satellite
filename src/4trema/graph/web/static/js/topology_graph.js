@@ -1,3 +1,9 @@
+Status = function() {
+	return {
+		STATUS_SHOW_HEATMAP: (1 << 0),
+	};
+}();
+
 Array.prototype.uniq = function(){
 	tmp = {};tmp_arr = [];
 	for( var i=0; i<this.length; i++ ){ tmp[ this[ i ] ] = i }
@@ -42,14 +48,54 @@ Node.prototype = function() {
 	};
 }();
 
-Path = function(a, b, cur, max, freq) {
-	var f_color = pv.Scale.linear(0, .5, 1.0).range("blue", "yellow", "red");
-	var f_weight = pv.Scale.linear(0, max).range(2, 15);
-
+_Path = function(a, b) {
 	this.pair = [a, b];
-	this.quantity = f_color(freq);
-	this.frequency = f_weight(cur);
+	this.heatmap = null;
+	this.width = 3;
 };
+
+_Path.prototype = function() {
+	return {
+		set_heatmap: function(cur, max, min) {
+			var f_color = pv.Scale.linear(min, (min + max) / 2, max).range("blue", "yellow", "red");
+
+			Path.set_status(Status.STATUS_SHOW_HEATMAP);
+
+			this.heatmap = f_color( cur );
+		},
+	};
+}();
+
+Path = function() {
+	var pathes = new Array();
+	var status = 0;
+
+	return {
+		add: function(a, b) {
+			var path = new _Path(a, b);
+
+			pathes.push( path );
+
+			return path;
+		},
+
+		all: function() {
+			return pathes;
+		},
+
+		get_status: function(val) {
+			return ( status & val ) > 0;
+		},
+
+		set_status: function(val) {
+			status |= val;
+		},
+
+		del_status: function(val) {
+			status &= ~val;
+		},
+	};
+}();
 
 Screen = function(w, h, v, t) {
 	this.width = w;
@@ -59,9 +105,6 @@ Screen = function(w, h, v, t) {
 };
 
 Screen.prototype = function() {
-	const STATUS_NODE_SELECTED = (1 << 0);
-	const STATUS_PATH_EMPHASIZE = (1 << 10);
-
 	const FREQUENCY_SCALE_WIDTH = 10;
 	const FREQUENCY_SCALE_HEIGHT = 100;
 	const FREQUENCY_SCALE_MARGIN = 10;
@@ -76,9 +119,10 @@ Screen.prototype = function() {
 
 	var selected_path = new Array();
 	var nodes = new Array();
-	var lines = new Array();
 
 	var vis_root = null;
+
+	var status = 0;
 
 	function initBaseInfo(w, h, e, t) {
 		screen_width = w;
@@ -151,30 +195,34 @@ Screen.prototype = function() {
 	}
 
 	function drawLine(panel){
+		var lines = Path.all();
+
 		for(var j=0; j<lines.length; j++) {
 			var path = lines[j];
+			var sstyle = ( path.heatmap != null ) ? path.heatmap.alpha(.5) : 'rgba(80, 80, 80, .5)'
 
 			panel.add(pv.Line)
 				.data(path.pair)
 				.left(function(d) { return d.x })
 				.top(function(d) { return ( d.y + MARGIN_TITLE_HEIGHT )})
-				.strokeStyle(path.quantity.alpha(.5))
+				.strokeStyle(sstyle)
 				.interpolate("linear")
 				.tension(0.7)
-				.lineWidth(path.frequency);
+				.lineWidth(path.width);
 		}
 	};
 
 	function drawSelectedPath(path) {
+		var sstyle = ( path.heatmap != null ) ? path.heatmap.alpha(.7) : 'rgba(80, 80, 80, .7)'
+
 		selected_path.push(vis_root.add(pv.Line)
 			.data(path.pair)
 			.left(function(d) { return d.x })
 			.top(function(d) { return ( d.y + MARGIN_TITLE_HEIGHT ) })
-			//.strokeStyle(pv.color("rgba(0xcc, 0xcd, 0xdf, .8)"))
-			.strokeStyle(path.quantity.alpha(.7))
+			.strokeStyle(sstyle)
 			.interpolate("linear")
 			.tension(0.5)
-			.lineWidth(path.frequency + 2));
+			.lineWidth(path.width + 2));
 	};
 
 	function clearSelectedPath() {
@@ -194,6 +242,7 @@ Screen.prototype = function() {
 	};
 
 	function eventNodeClicked(node) {
+		var lines = Path.all();
 		var selections = lines.filter(function(path) {
 			return path.pair.include(node);
 		});
@@ -209,7 +258,9 @@ Screen.prototype = function() {
 			.width(screen_width)
 			.height(screen_height);
 
-		drawScaleLine(vis_root);
+		if(Path.get_status(Status.STATUS_SHOW_HEATMAP)) {
+			drawScaleLine(vis_root);
+		}
 
 		for(var i=0; i<selections.length; i++) {
 			var path = selections[i];
@@ -222,7 +273,7 @@ Screen.prototype = function() {
 		drawLine(vis_root);
 
 		drawNode(vis_root);
-		
+
 		drawTitle(vis_root);
 		
 		vis_root.render();
@@ -246,16 +297,16 @@ Screen.prototype = function() {
 			drawScreen();
 		},
 
-		path: function(a_id, b_id, crr, max, freq) {
+		path: function(a_id, b_id) {
 			var a_node = getNode(a_id);
 			var b_node = getNode(b_id);
+			var ret = null;
 
 			if( a_node != undefined && b_node != undefined ) {
-				var path = new Path(a_node, b_node, crr, max, freq)
-				lines.push( path );
-
-				//lines.push(new Path(a_node, b_node, crr, max));
+				ret = Path.add(a_node, b_node)
 			}
+
+			return ret;
 		}
 	};
 }();

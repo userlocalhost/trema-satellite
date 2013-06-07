@@ -12,7 +12,13 @@
 			<% end %>
 
 			<% @pathes.each do |each| %>
-				screen.path(<%= each[:src] %>, <%= each[:dst] %>, <%= each[:cur] %>, <%= each[:max] %>, <%= each[:frq] %>)
+				var path = screen.path(<%= each[:src] %>, <%= each[:dst] %>)
+
+				<% if each[:heatmap] != nil then %>
+					path.set_heatmap( <%= each[:heatmap][:cur] %>, 
+							<%= each[:heatmap][:max] %>, 
+							<%= each[:heatmap][:min] %> );
+				<% end %>
 			<% end %>
 
 			screen.draw();

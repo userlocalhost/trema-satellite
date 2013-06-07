@@ -13,6 +13,10 @@ module Graph
 				@stanza[ param ]
 			end
 
+			def option? key
+				@stanza[ :options ].include? key
+			end
+
 			def self.each &block
 				@@components.each do |each|
 					block.call each
