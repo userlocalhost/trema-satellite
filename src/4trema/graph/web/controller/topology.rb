@@ -59,7 +59,12 @@ module Graph
 			
 					@nodes = get_nodes data
 					@pathes = get_pathes data
+
+					# static parameters
 					@graph_title = @stanza[ :title ]
+					@top_path = @stanza[ :href ]
+					@hostname = Graph::Web::Config.host
+					@portnum = Graph::Web::Config.port
 				end
 			
 				def get_nodes data

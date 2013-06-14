@@ -10,6 +10,8 @@ require 'graph/web/config'
 module Graph
 	module DSL
 		class Syntax
+			@hostname = 'localhost'
+
 			def topology title=nil, &block
 				stanza = Topology.new title
 				stanza.instance_eval( &block )
@@ -26,6 +28,10 @@ module Graph
 
 			def port portnum
 				Graph::Web::Config.port = portnum.to_i
+			end
+
+			def host hostname
+				Graph::Web::Config.host = hostname
 			end
 		end
 	end

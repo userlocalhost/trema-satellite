@@ -8,10 +8,7 @@ module Graph
 	module Web
 		class Runner
 			def self.run
-				port = ( Graph::Web::Config.port != nil ) ?
-					Graph::Web::Config.port : Graph::Web::Config::DEFAULT_PORTNUM
-
-				p "[Graph::Web::Runner] (run) port: #{port}"
+				port = Graph::Web::Config.port
 
 				Process.fork do
 					Rack::Handler::Mongrel.run Graph::Web::Top.new, :Port => port

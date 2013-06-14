@@ -1,8 +1,7 @@
-PortTraffic = function(data, s_time, e_time, title) {
+PortTraffic = function(data, s_time, e_time) {
 	this.raw_data = data;
 	this.start_time = s_time;
 	this.last_time = e_time;
-	this.graph_title = title;
 };
 
 PortTraffic.prototype = function() {
@@ -24,13 +23,11 @@ PortTraffic.prototype = function() {
 	var fcolor;
 	var graph_panel;
 	var root_panel;
-	var graph_title;
 
-	function initialize(data, s_time, e_time, title) {
+	function initialize(data, s_time, e_time) {
 		raw_data = data;
 		start_time = s_time;
 		last_time = e_time;
-		graph_title = title;
 
 		fcolor = pv.Scale.linear(0, raw_data.length - 1).range("#1f77b4", "#ff7f0e");
 	}
@@ -97,7 +94,7 @@ PortTraffic.prototype = function() {
 			.bottom(SCREEN_HEIGHT + 30)
 			.textAlign("center")
 			.font("30px sans-serif")
-			.text(graph_title)
+			.text(GRAPH_TITLE)
 	}
 	
 	function make_graph_selection(graph) {
@@ -184,7 +181,7 @@ PortTraffic.prototype = function() {
 
 	return {
 		draw: function(canvas) {
-			initialize(this.raw_data, this.start_time, this.last_time, this.graph_title);
+			initialize(this.raw_data, this.start_time, this.last_time);
 	
 			var root = new pv.Panel()
 				.canvas(canvas)

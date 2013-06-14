@@ -11,6 +11,11 @@
 		<script type="text/javascript" src="js/port_graph.js"></script>
 		<script type="text/javascript+protovis">
 
+			const PORTNUM = <%= @portnum %>
+			const HOSTNAME = '<%= @hostname %>';
+			const BASEPATH = '<%= @top_path %>';
+			const GRAPH_TITLE = '<%= @graph_title %>';
+
 			var portstats = [
 			<% @portstats.each do |each| %>
 				{
@@ -21,7 +26,7 @@
 			<% end %>
 			];
 			
-			pgraph = new PortTraffic(portstats, new Date("<%= @start_time %>"), new Date("<%= @last_time %>"), "<%= @graph_title %>");
+			pgraph = new PortTraffic(portstats, new Date("<%= @start_time %>"), new Date("<%= @last_time %>"));
 			
 			pgraph.draw('port_graph');
 		</script>

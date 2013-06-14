@@ -35,7 +35,7 @@ module Graph
 					param_end = param.get 'time_end'
 			
 					if param_start != nil && param_end != nil
-			
+
 						data = Graph::DB.query "select entry_id, packet_count, byte_count, time from flowstats where 
 							#{ param_start[:value] } < unix_timestamp(time) and 
 							unix_timestamp(time) < #{ param_end[:value] }"
@@ -85,7 +85,11 @@ module Graph
 						@last_time = stats[ stats.length - 1 ][:time]
 					end
 
+					# static parameters
 					@graph_title = @stanza[ :title ]
+					@top_path = @stanza[ :href ]
+					@hostname = Graph::Web::Config.host
+					@portnum = Graph::Web::Config.port
 				end
 			end
 

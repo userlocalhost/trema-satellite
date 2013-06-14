@@ -3,19 +3,16 @@ Messenger = function() {
 
 	return {
 		request: function(target, params) {
+			var base_url = 'http://' + HOSTNAME + ':' + PORTNUM + BASEPATH;
+			var param = '';
+
+			for(var key in params) {
+				param += key + '=' + params[key] + '&';
+			}
+
 			switch(target) {
 			case REQ_SHOW_FLOWSTATS: 
-				var url = 'http://' + Config.hostname + ':' + Config.port + '/get_flowstats';
-				var param = '';
-
-				for(var key in params) {
-					param += key + '=' + params[key] + '&';
-				}
-
-				console.log('param: ' + param);
-				console.log('url: ' + url + '?' + param);
-
-				new Ajax.Request(url, {
+				new Ajax.Request(base_url + '/get_flowstats', {
 						'method': 'get',
 						'parameters': param,
 						onSuccess: FlowStats.showFlowStats,
