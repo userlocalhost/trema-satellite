@@ -1,5 +1,2 @@
 *swp
-rack/config.rb
-rack/config.ru
-src/4trema/config.rb
-rack/static/js/config.js
+config.rb
