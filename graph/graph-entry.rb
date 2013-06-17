@@ -200,7 +200,7 @@ module Graph
 				return
 			end
 
-			store_db_stats "insert into flowstats (
+			Graph::DB.query "insert into flowstats (
 				entry_id,
 				packet_count,
 				byte_count
@@ -211,31 +211,11 @@ module Graph
 			)"
 		end
 
-		def store_db_stats sql
-			client = Graph::DB.get_accessor
-
-			client.prepare( sql ).execute
-
-			client.close
-		end
-
     def do_store_db_action entry_id, action, index = 0
 			case action
 			when ActionOutput
-	      sql = 'insert into actions (
-	        entry_id,
-	        list_index,
-	        action_type,
-	        outport
-	      ) value (?, ?, ?, ?)'
-
-				client = Graph::DB.get_accessor
-        stmt = client.prepare(sql).execute entry_id,
-          index,
-          OFPAT_OUTPUT,
-          action.port_number
-
-				client.close
+	      Graph::DB.query "insert into actions ( entry_id, list_index, action_type, outport )
+					value ( #{entry_id}, #{index}, #{OFPAT_OUTPUT}, #{action.port_number} )"
       end
     end
 
