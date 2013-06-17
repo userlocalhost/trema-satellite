@@ -44,18 +44,27 @@ Getting Started
 
 ### Bebore Building
 
-1. Install Trema
+* Install Trema
 
 T-Sat is a library of Trema application. In other words, 
 this works as an application of Trema. So you have to install <a href="http://trema.github.io/trema">Trema</a>.
 
-2. Install Mongrel (web server)
+* Install Mongrel (web server)
 
 And T-Sat represents web-viewer that works in conjunction with Trema. 
 It is therefore T-Sat uses the <a href='http://rubygems.org/gems/mongrel'>mongrel</a> which is a small HTTP library and web server.
 You can install mongrel with the following command
 
     $ gem install mongrel
+
+* Creating Database
+
+** This processing will be dropped in near future. **
+
+TSat stores some statistics data in the database using MySQL.
+Now, you have to create a database using 'sql/init.sql' like following.
+
+    $ mysql -uuser -ppassword < sql/init.sql
 
 ### Using T-Sat
 
