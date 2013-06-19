@@ -88,7 +88,7 @@ To start T-Sat, you have to use 'start_trema_satellite' command which is in the 
 
 To see the pictures that T-Sat generate, please access from here.
 
-    http://hostname:9292/
+    http://hostname:9393/porttraffic
 
 
 Configuration
