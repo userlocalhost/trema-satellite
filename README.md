@@ -100,18 +100,7 @@ customize output-views.
 
 ### how to use
 
-You can load the configuration file that you wrote 
-using load_config method from 'start' event-handler as follows.
-
-```ruby
-# Trema Controller Application File
-class TremaSattelite
-  ...
-  def start
-    load_config "tsat.conf"
-  end
-end
-```
+One of an example of tsat.conf is following.
 
 ```ruby
 #tsat.conf
@@ -128,7 +117,7 @@ porttraffic('Traffic-Trends Graph') {
 }
 ```
 
-Once execute Trema with 'trema run', you can see topology-graph and port-stats graph.
+Once execute Trema with 'start_trema_satellite' command, you can see topology-graph and port-stats graph.
 
     # for topology graph
     http://tsat-test:8080/topology
