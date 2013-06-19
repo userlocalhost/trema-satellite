@@ -34,8 +34,6 @@ class GraphController < Controller
     end
 
 		current_dir = File.expand_path(File.dirname(__FILE__))
-
-		load_config "#{current_dir}/conf/graph.conf"
   end
 
 
