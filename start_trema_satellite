@@ -63,6 +63,10 @@ check_command_existence() {
 	fi
 }
 
+init_default_params() {
+	TSAT_CONFIG="$(dirname ${0})/conf/default.conf"
+}
+
 init_tsat() {
 	tmpdir="${TOPDIR}/tmp"
 
@@ -72,6 +76,8 @@ init_tsat() {
 	then
 		mkdir ${tmpdir}
 	fi
+
+	init_default_params
 }
 
 start_web_server() {
@@ -89,7 +95,6 @@ stop_web_server() {
 }
 
 trema_run() {
-	echo "(trema_run) trema run ${APP_FILEPATH} ${TREMA_CONFIG} ${TREMA_FLAG_SHARK} ${TREMA_FLAG_DAEMON}"
 	trema run ${APP_FILEPATH} ${TREMA_CONFIG} ${TREMA_FLAG_SHARK} ${TREMA_FLAG_DAEMON}
 }
 
@@ -106,13 +111,13 @@ fi
 TOPDIR=`dirname $0`
 APP_FILEPATH=${ARGS[((${#ARGS[@]}-1))]}
 
+init_tsat
+
 parse_options $*
 
 check_command_existence "trema"
 check_file_existence ${TSAT_CONFIG}
 check_file_existence ${APP_FILEPATH}
-
-init_tsat
 
 start_web_server
 
