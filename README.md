@@ -61,7 +61,7 @@ You can install mongrel with the following command
 
 ** This processing will be dropped in near future. **
 
-TSat stores some statistics data in the database using MySQL.
+T-Sat stores some statistics data in the database using MySQL.
 Now, you have to create a database using 'sql/init.sql' like following.
 
     $ mysql -uuser -ppassword < sql/init.sql
@@ -79,6 +79,12 @@ end
 
 require 'graph'
 ```
+
+### Starting Trema-Sattelite
+
+To start T-Sat, you have to use 'start_trema_satellite' command which is in the top directory. The command-line options are almost same of Trema. A new option is '-f' that specifies view-configuration. For more detail of this, please see the usage by '-h' option. Following is an example of the way to use this command.
+
+    $ ./start_trema_satellite -c examples/trema_conf/l2switch_env.conf -f examples/graph_conf/graph.conf examples/learning-switch.rb
 
 To see the pictures that T-Sat generate, please access from here.
 
