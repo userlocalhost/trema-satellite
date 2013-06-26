@@ -63,7 +63,7 @@ module Graph
 				end
 			
 				def make_parameters
-					stats = Graph::DB.query 'select rx_packets, tx_packets, rx_bytes, tx_bytes, time from portstats where dpid = 1 and portnum = 1'
+					stats = Graph::DB.query 'select rx_packets, tx_packets, rx_bytes, tx_bytes, time from portstats'
 
 					stats = stats.reverse[0..20].reverse
 			
