@@ -30,8 +30,8 @@ module Graph
 						end
 					end
 				end
-		
-				Rack::Response.new ret[:body], ret[:status], ret[:header]
+
+				return ret[:status], ret[:header], ret[:body]
 			end
 		
 			private
