@@ -1,0 +1,48 @@
+<html>
+	<head>
+		<meta content="text/html" charset="UTF-8">
+
+		<link rel='stylesheet' type='text/css' href='css/port_traffic_list.css'>
+		<script type="text/javascript" src="js/prototype.js"></script>
+		<script type="text/javascript" src="js/protovis.js"></script>
+		<script type="text/javascript" src="js/date.js"></script>
+		<script type="text/javascript" src="js/port_traffic_list.js"></script>
+		<script type="text/javascript+protovis">
+
+const START_TIME = new Date("<%= @start_time %>");
+const LAST_TIME = new Date("<%= @last_time %>");
+
+console.log("[main] start_time : " + START_TIME);
+
+pgraph = new PortGraph(400, 150);
+
+<% @data_foreach_port.each do |key, each| %>
+var data = [
+	<%= each[:min1] %>,
+	<%= each[:min5] %>,
+	<%= each[:min15] %>,
+];
+
+pgraph.draw(data, 
+	"(dpid-portnum) = (<%= key %>)",
+	['1 Min Average', '5 Min Average', '15 Min Average'],
+	"graph-<%= key %>");
+<% end %>
+
+		</script>
+	</head>
+
+	<body>
+		<img src='img/logo_small.png'><br/>
+
+		<div id='centering'>
+			<h1> <%= @graph_title %> </h1>
+			<% @data_foreach_port.each do |key, each| %>
+				<div class='graph_context' id="graph-<%= key %>"></div>
+			<% end %>
+
+			<hr/>
+			This page is powered by Trema-Satellite.
+		</div>
+	</body>
+</html>

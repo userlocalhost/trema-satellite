@@ -7,6 +7,7 @@ module Graph
 		module Controller
 			class PortStats < Graph::Web::Component
 				TEMPLATE_ROOT = 'graph/web/static/port_traffic.erb'
+				VIEW_RANGE = 60
 
 				def initialize stanza
 					super stanza
@@ -65,7 +66,7 @@ module Graph
 				def make_parameters
 					stats = Graph::DB.query 'select rx_packets, tx_packets, rx_bytes, tx_bytes, time from portstats'
 
-					stats = stats.reverse[0..20].reverse
+					stats = stats.reverse[0..VIEW_RANGE].reverse
 			
 					# for setting context parameter
 					@portstats = []
@@ -94,7 +95,6 @@ module Graph
 					@portnum = Graph::Web::Config.port
 				end
 			end
-
 		end
 	end
 end

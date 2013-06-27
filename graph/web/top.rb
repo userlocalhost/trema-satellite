@@ -13,6 +13,9 @@ module Graph
 				ret = {:body => '', :status => 404, :header => {"Content-Type" => "text/plain"}}
 		
 				case env['REQUEST_PATH']
+				when /^\/img\/.*/
+					ret = ret_file( env )
+					ret[:header] = {"Content-Type" => "image/jpeg"}
 				when /^\/css\/.*/
 					ret = ret_file( env )
 					ret[:header] = {"Content-Type" => "text/css"}

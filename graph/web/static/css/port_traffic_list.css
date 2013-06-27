@@ -1,0 +1,10 @@
+.graph_context {
+	border-style:solid;
+	border-width: 1px;
+
+	cursor: pointer;
+}
+
+#centering {
+	text-align: center;
+}
