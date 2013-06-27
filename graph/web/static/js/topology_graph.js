@@ -185,9 +185,9 @@ Screen.prototype = function() {
 				.textAlign('right')
 				.text(function() { 
 					if( this.index == 0 ) {
-						return '高';
+						return 'high';
 					} else if( this.index == ( FREQUENCY_SCALE_LEVEL - 1 ) ) {
-						return '低';
+						return 'low';
 					}
 
 					return '';
