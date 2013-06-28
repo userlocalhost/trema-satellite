@@ -21,6 +21,10 @@ topology('Topology') {
 porttraffic('Traffic-Trends') {
   href '/porttraffic'
 }
+
+porttraffic_list('Traffic-Views') {
+	href '/traffic-view'
+}
 ```
 
 By this configuration, you can obtain the following views.
