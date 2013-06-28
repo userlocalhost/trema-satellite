@@ -25,8 +25,9 @@ porttraffic('Traffic-Trends') {
 
 By this configuration, you can obtain the following views.
 
-![Traffic-Graph](http://userlocalhost2000.github.io/trema-satellite/images/scr_traffic.png)
 ![Topology-Graph](http://userlocalhost2000.github.io/trema-satellite/images/scr_topology.png)
+![Traffic-Graph](http://userlocalhost2000.github.io/trema-satellite/images/scr_traffic.png)
+![Traffic-Views-Graph](http://userlocalhost2000.github.io/trema-satellite/images/scr_traffic_views.png)
 
 
 Why T-Sat needs
