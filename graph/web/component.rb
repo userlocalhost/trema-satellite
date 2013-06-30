@@ -1,3 +1,5 @@
+require 'uri'
+
 module Graph
 	module Web
 		class Component
@@ -41,7 +43,9 @@ module Graph
 		
 				# this method returns GET-parameter value
 				def get param_key
-					@params.find { |x| x[:key] == param_key } if @params != nil
+					obj = @params.find { |x| x[:key] == param_key } if @params != nil
+
+					URI.unescape obj[ :value ] if obj != nil
 				end
 			end
 		end

@@ -1,3 +1,6 @@
+require 'time'
+require 'uri'
+
 require 'graph/graph-db'
 
 require 'graph/web/component'
@@ -5,6 +8,27 @@ require 'graph/web/component'
 module Graph
 	module Web
 		module Controller
+			class SQLCondition
+				def initialize
+					@conditions = Array.new
+				end
+
+				def add cond
+					if cond != nil then
+						@conditions << cond
+					end
+				end
+
+				def to_s
+					ret = 'where '
+					@conditions.each do |each|
+						ret += "#{each} and "
+					end
+
+					ret + '1'
+				end
+			end
+
 			class PortStats < Graph::Web::Component
 				TEMPLATE_ROOT = 'graph/web/static/port_traffic.erb'
 				VIEW_RANGE = 60
@@ -22,7 +46,7 @@ module Graph
 						ret = {:body => make_response_get_flowstats( param ), :status => 200}
 						ret[:header] = {"Content-Type" => "text/plain"}
 					when @stanza[ :href ]
-						ret = {:body => make_response, :status => 200}
+						ret = {:body => make_response( param ), :status => 200}
 						ret[:header] = {"Content-Type" => "text/html"}
 					end
 		
@@ -38,8 +62,8 @@ module Graph
 					if param_start != nil && param_end != nil
 
 						data = Graph::DB.query "select entry_id, packet_count, byte_count, time from flowstats where 
-							#{ param_start[:value] } < unix_timestamp(time) and 
-							unix_timestamp(time) < #{ param_end[:value] }"
+							#{ param_start } < unix_timestamp(time) and 
+							unix_timestamp(time) < #{ param_end }"
 			
 						ret = data.map { |x| x[:entry_id].to_i }.uniq.map do |id|
 							{ 
@@ -53,8 +77,8 @@ module Graph
 					return ret.to_json
 				end
 			
-				def make_response
-					make_parameters
+				def make_response param
+					make_parameters param
 			
 					erb2html TEMPLATE_ROOT
 				end
@@ -63,10 +87,28 @@ module Graph
 					ERB.new( File.read( path ) ).result( binding )
 				end
 			
-				def make_parameters
-					stats = Graph::DB.query 'select rx_packets, tx_packets, rx_bytes, tx_bytes, time from portstats'
+				def make_parameters param
+					condition = SQLCondition.new
 
-					stats = stats.reverse[0..VIEW_RANGE].reverse
+					param_start = param.get( "time_start" )
+					param_last = param.get( "time_last" )
+					param_dpid = param.get( "dpid" )
+					param_pnum = param.get( "pnum" ) 
+
+					# NOTE: needs validation check of GET-parameters
+
+					view_range = param.get( "range" ) != nil ? param.get( "range" ) : VIEW_RANGE
+
+					condition.add "time > '#{param_start}'" if param_start != nil
+					condition.add "time < '#{param_last}'" if param_last != nil
+					condition.add "dpid = #{param_dpid}" if param_dpid != nil
+					condition.add "portnum = #{param_pnum}" if param_pnum != nil
+
+					sql = "select rx_packets, tx_packets, rx_bytes, tx_bytes, time from portstats #{condition.to_s}"
+
+					stats = Graph::DB.query sql
+
+					stats = stats.reverse[ 0..(view_range.to_i) ].reverse
 			
 					# for setting context parameter
 					@portstats = []
