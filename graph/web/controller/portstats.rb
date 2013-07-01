@@ -109,8 +109,51 @@ module Graph
 					stats = Graph::DB.query sql
 
 					stats = stats.reverse[ 0..(view_range.to_i) ].reverse
-			
-					# for setting context parameter
+
+					make_graph_context stats
+
+					make_graph_metainfo stats, param
+				end
+
+				def make_graph_metainfo stats, param
+					param_dpid = param.get( "dpid" )
+					param_pnum = param.get( "pnum" ) 
+
+					if ! stats.empty? then
+						# for setting time parameter
+						@start_time = stats[0][:time]
+						@last_time = stats[ stats.length - 1 ][:time]
+
+						start_date = @start_time.split(' ')[0]
+						start_time = @start_time.split(' ')[1]
+
+						last_date = @last_time.split(' ')[0]
+						last_time = @last_time.split(' ')[1]
+
+						@graph_info = "[#{start_date}] #{start_time} - #{last_time}"
+						if start_date != last_date then
+							@graph_info = "[#{start_date}] #{start_time} - [#{last_date}] #{last_time}"
+						end
+
+						if param_dpid != nil then
+							datapath_info = "dpid:#{param_dpid}"
+
+							if param_pnum != nil then
+								datapath_info += ", portnum:#{param_pnum}"
+							end
+
+							@graph_info += " (#{datapath_info})"
+						end
+					end
+
+					# static parameters
+					@graph_title = @stanza[ :title ]
+					@top_path = @stanza[ :href ]
+					@hostname = Graph::Web::Config.host
+					@portnum = Graph::Web::Config.port
+				end
+
+				def make_graph_context stats
 					@portstats = []
 					[ {:label => :rx_packets, :unit => 'packets'}, 
 						{:label => :tx_packets, :unit => 'packets'}, 
@@ -123,18 +166,6 @@ module Graph
 							:input => stats.map { |stat| stat[ each[:label].to_sym ] } 
 						}
 					end
-		
-					if ! stats.empty? then
-						# for setting time parameter
-						@start_time = stats[0][:time]
-						@last_time = stats[ stats.length - 1 ][:time]
-					end
-
-					# static parameters
-					@graph_title = @stanza[ :title ]
-					@top_path = @stanza[ :href ]
-					@hostname = Graph::Web::Config.host
-					@portnum = Graph::Web::Config.port
 				end
 			end
 		end
