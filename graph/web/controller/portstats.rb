@@ -108,7 +108,11 @@ module Graph
 
 					stats = Graph::DB.query sql
 
-					stats = stats.reverse[ 0..(view_range.to_i) ].reverse
+					if param_start != nil then
+						stats = stats[ 0..(view_range.to_i) ]
+					else
+						stats = stats.reverse[ 0..(view_range.to_i) ].reverse
+					end
 
 					make_graph_context stats
 

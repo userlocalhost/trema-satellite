@@ -3,12 +3,47 @@
 		<meta content="text/html" charset="UTF-8">
 		<link rel='stylesheet' type='text/css' href='css/port_traffic.css' />
 		<script type="text/javascript" src="js/prototype.js"></script>
+		<script type="text/javascript" src="js/protovis.js"></script>
 		<script type="text/javascript" src="js/flowstats.js"></script>
 		<script type="text/javascript" src="js/config.js"></script>
 		<script type="text/javascript" src="js/messenger.js"></script>
-		<script type="text/javascript" src="js/protovis.js"></script>
 		<script type="text/javascript" src="js/date.js"></script>
 		<script type="text/javascript" src="js/port_graph.js"></script>
+
+		<script type="text/javascript">
+			function slideWindow(e) {
+				var elem_id = e.currentTarget.id;
+
+				var request_params = '';
+				var current_href = location.href;
+				if( current_href.indexOf( '?' ) >= 0 ) {
+					params = current_href.split( '?' )[ 1 ].split( '&' );
+					current_href = current_href.split( '?' )[ 0 ];
+
+					for( var i=0; i<params.length; i++ ) {
+						var key = params[ i ].split( '=' )[ 0 ];
+	
+						if( ( key != 'time_start' ) && ( key != 'time_last' ) ) {
+							request_params += params[ i ] + "&";
+						}
+					}
+				}
+
+				if( elem_id == 'left-side' ) {
+					request_params += "time_last=<%= @start_time %>"
+				} else {
+					request_params += "time_start=<%= @last_time %>"
+				}
+
+				location.href = current_href + '?' + request_params;
+			}
+
+			window.onload = function() {
+				$('left-side').observe('click', slideWindow);
+				$('right-side').observe('click', slideWindow);
+			}
+		</script>
+
 		<script type="text/javascript+protovis">
 
 			const PORTNUM = <%= @portnum %>
@@ -36,6 +71,9 @@
 
 		<div class="centering" id='graph_context'>
 			<div class="centering" id="graph_info">
+				<span id="left-side"><img src="img/left.png"></span>
+				<span id="right-side"><img src="img/right.png"></span>
+
 				<span class="text"><%= @graph_info %></span>
 			</div>
 
