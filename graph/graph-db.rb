@@ -1,45 +1,54 @@
-require "config"
-require "mysql"
+require 'rubygems'
+require 'sqlite3'
 
 module Graph
 	class DB
+		INIT_SQL_PATH = File.dirname( __FILE__ ) + '/sql/init_sqlite3.sql'
+		DB_PATH = File.dirname( __FILE__ ) + "/../tmp/graph.db"
+
 		# to use initialization
 		TABLES = [ 'actions', 'entries', 'portstats', 'flowstats', 
 			'hosts', 'nodes', 'ports', 'switches', 'viewcomponents' ]
 
-		def self.get_accessor
-			return Mysql.connect(Config::DB_HOST, Config::DB_USER, Config::DB_PASSWD, Config::DB_NAME)
-		end
-
-		def self.query sql
-			accr = get_accessor
-
-			if sql =~ /^insert into / then
-        stmt = accr.prepare(sql).execute
-
-				ret = stmt.insert_id
-			elsif sql =~ /select (.*) from/
-				key = $1.delete(' ').split(',').map { |x| x.to_sym }
-
-				ret = Array.new
-				accr.query( sql ).each do |each|
-					ret << Hash[*(key.zip(each)).flatten]
-				end
-			else
-				ret = accr.query sql 
+		def initialize
+			if ! FileTest.exist? File.dirname( DB_PATH ) then
+				FileUtils.mkdir_p File.dirname( DB_PATH )
 			end
 
-			accr.close
+			db_exists = FileTest.exist? DB_PATH
 
-			return ret
+			@db = SQLite3::Database.new DB_PATH
+			if ! db_exists then
+				@db.execute_batch File.read( INIT_SQL_PATH )
+			end
+
+			ObjectSpace.define_finalizer( self, proc { @db.close } )
+		end
+
+		def query sql
+			ret = nil
+
+			if sql =~ /^insert into / then
+				@db.execute( sql )
+				ret = @db.last_insert_row_id
+			elsif sql =~ /select (.*) from/
+				key = $1.delete(' ').split(',').map { |x| x.to_sym }
+	
+				ret = Array.new
+				@db.execute( sql ).each do |each|
+					ret << Hash[ *key.zip( each ).flatten ]
+				end
+			else
+				@db.execute sql
+			end
+
+			ret
 		end
 
 		def self.clear
-			client = get_accessor
-			TABLES.each do |each|
-				client.prepare( "delete from #{each}" ).execute
+			if FileTest.exist? DB_PATH
+				File.delete DB_PATH
 			end
-			client.close
 		end
 	end
 end

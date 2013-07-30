@@ -50,13 +50,13 @@ module Graph
 		end
 
 		def isin_db?
-			ret = Graph::DB.query "select dpid from ports where dpid = #{@dpid} and portnum = #{@portnum}"
+			ret = Graph::DB.new.query "select dpid from ports where dpid = #{@dpid} and portnum = #{@portnum}"
 
 			return ( ret.length > 0 ) ? true : false
 		end
 
 		def get_nodeid
-			ret = Graph::DB.query "select node_id from ports where dpid = #{@dpid} and portnum = #{@portnum}"
+			ret = Graph::DB.new.query "select node_id from ports where dpid = #{@dpid} and portnum = #{@portnum}"
 
 			return ( ret.length > 0 ) ? ret[0][:node_id] : nil
 		end
@@ -72,16 +72,16 @@ module Graph
 			@prev_rx_bytes = rx_b
 			@prev_tx_bytes = tx_b
 
-			Graph::DB.query "insert into portstats
+			Graph::DB.new.query "insert into portstats
 					(dpid, portnum, node_id, rx_packets, tx_packets, rx_bytes, tx_bytes) values
 					(#{@dpid}, #{@portnum}, #{@node_id}, #{rx_pd}, #{tx_pd}, #{rx_bd}, #{tx_bd})"
 		end
 
 		def store_db
 			if isin_db? then
-				Graph::DB.query "update ports set connection_to = #{@neighbor} where dpid = #{@dpid} and portnum = #{@portnum}"
+				Graph::DB.new.query "update ports set connection_to = #{@neighbor} where dpid = #{@dpid} and portnum = #{@portnum}"
 			else
-				Graph::DB.query "insert into ports 
+				Graph::DB.new.query "insert into ports 
 								(dpid, node_id, portnum, connection_to) values
 								(#{@dpid}, #{@node_id}, #{@portnum}, #{@neighbor})"
 			end
@@ -126,7 +126,7 @@ module Graph
 
 		# This routine returns node_id that
 		def self.add_node
-			Graph::DB.query "insert into nodes (type) values (#{NodeType.port})"
+			Graph::DB.new.query "insert into nodes (type) values (#{NodeType.port})"
 		end
 	end
 
@@ -155,18 +155,18 @@ module Graph
 
 		def store_db
 			if ! isin_db? then
-				Graph::DB.query "insert into hosts (node_id, neighbor, dladdr, nwaddr) values (#{@node_id}, #{@neighbor}, '#{@mac}', '#{@ip}')"
+				Graph::DB.new.query "insert into hosts (node_id, neighbor, dladdr, nwaddr) values (#{@node_id}, #{@neighbor}, '#{@mac}', '#{@ip}')"
 			end
 		end
 
 		def isin_db?
-			ret = Graph::DB.query "select * from hosts where dladdr = '#{@mac}' and nwaddr = '#{@ip}'"
+			ret = Graph::DB.new.query "select * from hosts where dladdr = '#{@mac}' and nwaddr = '#{@ip}'"
 
 			return (ret.length > 0) ? true : false
 		end
 
 		def get_nodeid
-			ret = Graph::DB.query "select node_id from hosts where dladdr = '#{@mac}' and nwaddr = '#{@ip}'"
+			ret = Graph::DB.new.query "select node_id from hosts where dladdr = '#{@mac}' and nwaddr = '#{@ip}'"
 
 			return ( ret.length > 0 ) ? ret[0][:node_id] : nil
 		end
@@ -184,7 +184,7 @@ module Graph
 		end
 
 		def self.add_node
-			Graph::DB.query "insert into nodes (type) values (#{NodeType.host})"
+			Graph::DB.new.query "insert into nodes (type) values (#{NodeType.host})"
 		end
 	end
 end
