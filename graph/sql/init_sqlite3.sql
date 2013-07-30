@@ -66,7 +66,6 @@ create table flowstats (
 
 create table portstats (
 	stats_id integer primary key autoincrement,
-	entry_id int unsigned not null,
 	dpid bigint unsigned not null,
 	portnum smallint unsigned not null,
 	node_id int unsigned,

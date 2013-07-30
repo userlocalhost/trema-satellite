@@ -1,7 +1,7 @@
 #!/bin/bash
 
 usage() {
-	cat << EOF
+  cat << EOF
 usage: trema_satellite [options] <trema_app>
 
 This script runs trema with trema-satellite. The <app> of last argument specifies an application file path of Trema. This is same of the first argument of "trema run" command.
@@ -9,93 +9,93 @@ This script runs trema with trema-satellite. The <app> of last argument specifie
 OPTIONS:
    -h      Show this message
    -f      Specifies Trema-Satellite configuration
-	 -c      Specifies emulated network configuration (Trema Option)
-	 -s      Enables Trema wireshark plugin (Trema Option)
-	 -d      Runs as a daemon (Trema Option)
+   -c      Specifies emulated network configuration (Trema Option)
+   -s      Enables Trema wireshark plugin (Trema Option)
+   -d      Runs as a daemon (Trema Option)
 EOF
 }
 
 parse_options() {
-	while getopts hf:c:sd OPTION
-	do
-		case $OPTION in
-			h)
-				usage
-				exit 1
-				;;
-			f)
-				TSAT_CONFIG=${OPTARG}
-				;;
-			c)
-				TREMA_CONFIG="-c ${OPTARG}"
-				;;
-			s)
-				TREMA_FLAG_SHARK="-s"
-				;;
-			d)
-				TREMA_FLAG_DAEMON="-d"
-				;;
-			?)
-				usage
-				exit
-				;;
-		esac
-	done
+  while getopts hf:c:sd OPTION
+  do
+    case $OPTION in
+      h)
+        usage
+        exit 1
+        ;;
+      f)
+        TSAT_CONFIG=${OPTARG}
+        ;;
+      c)
+        TREMA_CONFIG="-c ${OPTARG}"
+        ;;
+      s)
+        TREMA_FLAG_SHARK="-s"
+        ;;
+      d)
+        TREMA_FLAG_DAEMON="-d"
+        ;;
+      ?)
+        usage
+        exit
+        ;;
+    esac
+  done
 }
 
 check_file_existence() {
-	if [ ! -e $1 ]
-	then
-		echo "(error) trema-satellite: $1: file not found"
-		echo "Please check command-line optios with -h parameter."
+  if [ ! -e $1 ]
+  then
+    echo "(error) trema-satellite: $1: file not found"
+    echo "Please check command-line optios with -h parameter."
 
-		exit 1
-	fi
+    exit 1
+  fi
 }
 
 check_command_existence() {
-	if [ ! -n $(which $1) ]
-	then
-		echo "(error) trema-satellite: $1: command not found"
-		echo "Please check command-line optios with -h parameter."
+  if [ ! -n $(which $1) ]
+  then
+    echo "(error) trema-satellite: $1: command not found"
+    echo "Please check command-line optios with -h parameter."
 
-		exit 1
-	fi
+    exit 1
+  fi
 }
 
 init_default_params() {
-	TSAT_CONFIG="$(dirname ${0})/conf/default.conf"
+  TSAT_CONFIG="$(dirname ${0})/conf/default.conf"
 }
 
 init_tsat() {
-	tmpdir="${TOPDIR}/tmp"
+  tmpdir="${TOPDIR}/tmp"
 
-	db_path="${tmpdir}/.stored_data.db"
+  db_path="${tmpdir}/.stored_data.db"
 
-	if [ ! -d ${tmpdir} ]
-	then
-		mkdir ${tmpdir}
-	fi
+  if [ ! -d ${tmpdir} ]
+  then
+    mkdir ${tmpdir}
+  fi
 
-	init_default_params
+  init_default_params
 }
 
 start_web_server() {
-	ruby graph/command/web-runner.rb ${TSAT_CONFIG} &
+  ruby graph/command/web-runner.rb ${TSAT_CONFIG} &
 
-	WEB_SERVER_PID=$!
+  WEB_SERVER_PID=$!
 }
 
 stop_web_server() {
-	ps ${WEB_SERVER_PID} &> /dev/null
-	if [ $? == 0 ]
-	then
-		kill ${WEB_SERVER_PID}
-	fi
+  ps ${WEB_SERVER_PID} &> /dev/null
+  if [ $? == 0 ]
+  then
+    kill ${WEB_SERVER_PID}
+  fi
 }
 
 trema_run() {
-	trema run ${APP_FILEPATH} ${TREMA_CONFIG} ${TREMA_FLAG_SHARK} ${TREMA_FLAG_DAEMON}
+  trema run ${APP_FILEPATH} ${TREMA_CONFIG} ${TREMA_FLAG_SHARK} ${TREMA_FLAG_DAEMON}
 }
 
 ### main processing ###
@@ -104,8 +104,8 @@ ARGS=("$@")
 
 if [ $# -lt 1 ]
 then
-	usage
-	exit 1
+  usage
+  exit 1
 fi
 
 TOPDIR=`dirname $0`

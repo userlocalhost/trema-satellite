@@ -62,14 +62,12 @@ You can install mongrel with the following command
 
     $ gem install mongrel
 
-* Creating Database
+* Install SQLite3
 
-** This processing will be dropped in near future. **
+Trema uses sqlite for communicating between the controller and web-server.
+The installation of sqlite3 would be following.
 
-T-Sat stores some statistics data in the database using MySQL.
-Now, you have to create a database using 'sql/init.sql' like following.
-
-    $ mysql -uuser -ppassword < sql/init.sql
+    $ gem install sqlite3
 
 ### Using T-Sat
 

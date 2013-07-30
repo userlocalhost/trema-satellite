@@ -200,11 +200,11 @@ module Graph
 				return
 			end
 
-			Graph::DB.query "insert into flowstats (
+			Graph::DB.new.query "insert into flowstats (
 				entry_id,
 				packet_count,
 				byte_count
-			) value (
+			) values (
 				#{ret[:entry_id]},
 				#{ @stats.packet_count - @stats.last_packet_count },
 				#{ @stats.byte_count - @stats.last_byte_count }
@@ -214,8 +214,8 @@ module Graph
     def do_store_db_action entry_id, action, index = 0
 			case action
 			when ActionOutput
-	      Graph::DB.query "insert into actions ( entry_id, list_index, action_type, outport )
-					value ( #{entry_id}, #{index}, #{OFPAT_OUTPUT}, #{action.port_number} )"
+	      Graph::DB.new.query "insert into actions ( entry_id, list_index, action_type, outport )
+					values ( #{entry_id}, #{index}, #{OFPAT_OUTPUT}, #{action.port_number} )"
       end
     end
 
@@ -289,7 +289,7 @@ module Graph
 
 		private
 		def db_update_entry entry_id, removed_time = '0000-00-00 00:00:00'
-			Graph::DB.query "update entries set
+			Graph::DB.new.query "update entries set
 				route_id = #{@route_id},
 				route_index = #{@route_index} ,
 				removed_time = '#{removed_time}',
@@ -297,7 +297,7 @@ module Graph
 		end
 
     def db_insert_entry
-			Graph::DB.query "insert into entries (
+			Graph::DB.new.query "insert into entries (
 				dpid,
 				route_id, 
 				route_index,
@@ -314,7 +314,7 @@ module Graph
 				match_nw_dst,
 				match_tp_src,
 				match_tp_dst
-			) value (
+			) values (
 				#{@dpid}, 
 				#{@route_id},
 				#{@route_index},
@@ -336,7 +336,7 @@ module Graph
 
     # This routine returns entry_id. If no stored entry is matched, this returns -1.
 		def isin_db
-			( Graph::DB.query "select entry_id from entries 
+			( Graph::DB.new.query "select entry_id from entries 
 							where dpid = #{ @dpid } and 
 								status != #{ STATUS_IS_REMOVED } and
 								match_in_port = #{ @match.in_port } and
