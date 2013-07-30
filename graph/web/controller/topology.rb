@@ -55,7 +55,7 @@ module Graph
 				end
 			
 				def make_parameters
-					data = Graph::DB.query "select node_id, dpid, portnum, connection_to from ports"
+					data = Graph::DB.new.query "select node_id, dpid, portnum, connection_to from ports"
 			
 					@nodes = get_nodes data
 					@pathes = get_pathes data
@@ -90,7 +90,7 @@ module Graph
 			
 					data.each do |each|
 						dst_node = data.find { |x| x[:node_id] == each[:connection_to] }
-						portstats = Graph::DB.query "select rx_packets, tx_packets, rx_bytes, tx_bytes from portstats where node_id = '#{each[:node_id]}'"
+						portstats = Graph::DB.new.query "select rx_packets, tx_packets, rx_bytes, tx_bytes from portstats where node_id = '#{each[:node_id]}'"
 		
 						if dst_node != nil then
 							path = {

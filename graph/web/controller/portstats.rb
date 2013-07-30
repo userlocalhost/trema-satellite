@@ -61,7 +61,7 @@ module Graph
 			
 					if param_start != nil && param_end != nil
 
-						data = Graph::DB.query "select entry_id, packet_count, byte_count, time from flowstats where 
+						data = Graph::DB.new.query "select entry_id, packet_count, byte_count, time from flowstats where 
 							#{ param_start } < unix_timestamp(time) and 
 							unix_timestamp(time) < #{ param_end }"
 			
@@ -69,7 +69,7 @@ module Graph
 							{ 
 								:entry_id => id,
 								:stats => data.select{ |entry| entry[:entry_id].to_i == id }.each{ |x| x.delete(:entry_id) },
-								:match => Graph::DB.query( "select dpid, match_wildcards, match_in_port, match_dl_src, match_dl_dst, match_dl_vlan, match_dl_vlan_pcp, match_dl_type, match_nw_tos, match_nw_proto, match_nw_src, match_nw_dst, match_tp_src, match_tp_dst from entries where entry_id = #{ id }" )[0] ,
+								:match => Graph::DB.new.query( "select dpid, match_wildcards, match_in_port, match_dl_src, match_dl_dst, match_dl_vlan, match_dl_vlan_pcp, match_dl_type, match_nw_tos, match_nw_proto, match_nw_src, match_nw_dst, match_tp_src, match_tp_dst from entries where entry_id = #{ id }" )[0] ,
 							}
 						end
 					end
@@ -106,7 +106,7 @@ module Graph
 
 					sql = "select rx_packets, tx_packets, rx_bytes, tx_bytes, time from portstats #{condition.to_s}"
 
-					stats = Graph::DB.query sql
+					stats = Graph::DB.new.query sql
 
 					if param_start != nil then
 						stats = stats[ 0..(view_range.to_i) ]
