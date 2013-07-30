@@ -21,8 +21,6 @@ module Graph
 			if ! db_exists then
 				@db.execute_batch File.read( INIT_SQL_PATH )
 			end
-
-			ObjectSpace.define_finalizer( self, proc { @db.close } )
 		end
 
 		def query sql
@@ -41,6 +39,8 @@ module Graph
 			else
 				@db.execute sql
 			end
+
+			@db.close
 
 			ret
 		end
